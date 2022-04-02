@@ -1,0 +1,9 @@
+PRETTY_NAME="ScratchyOS 2.0 (sadb)"
+NAME="ScratchyOS GNU/Linux"
+VERSION_ID="2"
+VERSION="2 (sadb)"
+VERSION_CODENAME=sadb
+ID=scratchos
+HOME_URL="https://www.debian.org/"
+SUPPORT_URL="https://www.debian.org/support"
+BUG_REPORT_URL="https://bugs.debian.org/"
