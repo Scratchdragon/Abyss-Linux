@@ -1,7 +1,0 @@
-#Add Abyss repositories
-
-#Run an update with "SSL_NO_VERIFY_PEER" flag in order to avoid verification error
-SSL_NO_VERIFY_PEER=true xbps-install -S xbps
-
-#Install KDE5-plasma and install Sweet theme
-xbps-install kde5 xorg
