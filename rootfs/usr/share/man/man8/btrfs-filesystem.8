@@ -1,0 +1,878 @@
+'\" t
+.\"     Title: btrfs-filesystem
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 09/20/2021
+.\"    Manual: Btrfs Manual
+.\"    Source: Btrfs v5.14.1
+.\"  Language: English
+.\"
+.TH "BTRFS\-FILESYSTEM" "8" "09/20/2021" "Btrfs v5\&.14\&.1" "Btrfs Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+btrfs-filesystem \- command group that primarily does work on the whole filesystems
+.SH "SYNOPSIS"
+.sp
+\fBbtrfs filesystem\fR \fI<subcommand>\fR \fI<args>\fR
+.SH "DESCRIPTION"
+.sp
+\fBbtrfs filesystem\fR is used to perform several whole filesystem level tasks, including all the regular filesystem operations like resizing, space stats, label setting/getting, and defragmentation\&. There are other whole filesystem tasks like scrub or balance that are grouped in separate commands\&.
+.SH "SUBCOMMAND"
+.PP
+\fBdf\fR [options] \fI<path>\fR
+.RS 4
+Show a terse summary information about allocation of block group types of a given mount point\&. The original purpose of this command was a debugging helper\&. The output needs to be further interpreted and is not suitable for quick overview\&.
+.sp
+An example with description:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+device size:
+\fI1\&.9TiB\fR, one device, no RAID
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+filesystem size:
+\fI1\&.9TiB\fR
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+created with:
+\fImkfs\&.btrfs \-d single \-m single\fR
+.RE
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ btrfs filesystem df /path
+Data, single: total=1\&.15TiB, used=1\&.13TiB
+System, single: total=32\&.00MiB, used=144\&.00KiB
+Metadata, single: total=12\&.00GiB, used=6\&.45GiB
+GlobalReserve, single: total=512\&.00MiB, used=0\&.00B
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIData\fR,
+\fISystem\fR
+and
+\fIMetadata\fR
+are separate block group types\&.
+\fIGlobalReserve\fR
+is an artificial and internal emergency space, see below\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIsingle\fR \(em the allocation profile, defined at mkfs time
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fItotal\fR \(em sum of space reserved for all allocation profiles of the given type, ie\&. all Data/single\&. Note that it\(cqs not total size of filesystem\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIused\fR \(em sum of used space of the above, ie\&. file extents, metadata blocks
+.RE
+.sp
+\fIGlobalReserve\fR
+is an artificial and internal emergency space\&. It is used eg\&. when the filesystem is full\&. Its
+\fItotal\fR
+size is dynamic based on the filesystem size, usually not larger than 512MiB,
+\fIused\fR
+may fluctuate\&.
+.sp
+The GlobalReserve is a portion of Metadata\&. In case the filesystem metadata is exhausted,
+\fIGlobalReserve/total + Metadata/used = Metadata/total\fR\&. Otherwise there appears to be some unused space of Metadata\&.
+.sp
+\fBOptions\fR
+.PP
+\-b|\-\-raw
+.RS 4
+raw numbers in bytes, without the
+\fIB\fR
+suffix
+.RE
+.PP
+\-h|\-\-human\-readable
+.RS 4
+print human friendly numbers, base 1024, this is the default
+.RE
+.PP
+\-H
+.RS 4
+print human friendly numbers, base 1000
+.RE
+.PP
+\-\-iec
+.RS 4
+select the 1024 base for the following options, according to the IEC standard
+.RE
+.PP
+\-\-si
+.RS 4
+select the 1000 base for the following options, according to the SI standard
+.RE
+.PP
+\-k|\-\-kbytes
+.RS 4
+show sizes in KiB, or kB with \-\-si
+.RE
+.PP
+\-m|\-\-mbytes
+.RS 4
+show sizes in MiB, or MB with \-\-si
+.RE
+.PP
+\-g|\-\-gbytes
+.RS 4
+show sizes in GiB, or GB with \-\-si
+.RE
+.PP
+\-t|\-\-tbytes
+.RS 4
+show sizes in TiB, or TB with \-\-si
+.sp
+If conflicting options are passed, the last one takes precedence\&.
+.RE
+.RE
+.PP
+\fBdefragment\fR [options] \fI<file>\fR|\fI<dir>\fR [\fI<file>\fR|\fI<dir>\fR\&...]
+.RS 4
+Defragment file data on a mounted filesystem\&. Requires kernel 2\&.6\&.33 and newer\&.
+.sp
+If
+\fI\-r\fR
+is passed, files in dir will be defragmented recursively (not descending to subvolumes, mount points and directory symlinks)\&. The start position and the number of bytes to defragment can be specified by start and length using
+\fI\-s\fR
+and
+\fI\-l\fR
+options below\&. Extents bigger than value given by
+\fI\-t\fR
+will be skipped, otherwise this value is used as a target extent size, but is only advisory and may not be reached if the free space is too fragmented\&. Use 0 to take the kernel default, which is 256kB but may change in the future\&. You can also turn on compression in defragment operations\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBWarning\fR
+.ps -1
+.br
+Defragmenting with Linux kernel versions < 3\&.9 or \(>= 3\&.14\-rc2 as well as with Linux stable kernel versions \(>= 3\&.10\&.31, \(>= 3\&.12\&.12 or \(>= 3\&.13\&.4 will break up the reflinks of COW data (for example files copied with
+\fBcp \-\-reflink\fR, snapshots or de\-duplicated data)\&. This may cause considerable increase of space usage depending on the broken up reflinks\&.
+.sp .5v
+.RE
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+Directory arguments without
+\fI\-r\fR
+do not defragment files recursively but will defragment certain internal trees (extent tree and the subvolume tree)\&. This has been confusing and could be removed in the future\&.
+.sp .5v
+.RE
+For
+\fIstart\fR,
+\fIlen\fR,
+\fIsize\fR
+it is possible to append units designator: \*(AqK\*(Aq, \*(AqM\*(Aq, \*(AqG\*(Aq, \*(AqT\*(Aq, \*(AqP\*(Aq, or \*(AqE\*(Aq, which represent KiB, MiB, GiB, TiB, PiB, or EiB, respectively (case does not matter)\&.
+.sp
+\fBOptions\fR
+.PP
+\-c[\fI<algo>\fR]
+.RS 4
+compress file contents while defragmenting\&. Optional argument selects the compression algorithm,
+\fIzlib\fR
+(default),
+\fIlzo\fR
+or
+\fIzstd\fR\&. Currently it\(cqs not possible to select no compression\&. See also section
+\fIEXAMPLES\fR\&.
+.RE
+.PP
+\-r
+.RS 4
+defragment files recursively in given directories, does not descend to subvolumes or mount points
+.RE
+.PP
+\-f
+.RS 4
+flush data for each file before going to the next file\&.
+.sp
+This will limit the amount of dirty data to current file, otherwise the amount accumulates from several files and will increase system load\&. This can also lead to ENOSPC if there\(cqs too much dirty data to write and it\(cqs not possible to make the reservations for the new data (ie\&. how the COW design works)\&.
+.RE
+.PP
+\-s \fI<start>\fR[kKmMgGtTpPeE]
+.RS 4
+defragmentation will start from the given offset, default is beginning of a file
+.RE
+.PP
+\-l \fI<len>\fR[kKmMgGtTpPeE]
+.RS 4
+defragment only up to
+\fIlen\fR
+bytes, default is the file size
+.RE
+.PP
+\-t \fI<size>\fR[kKmMgGtTpPeE]
+.RS 4
+target extent size, do not touch extents bigger than
+\fIsize\fR, default: 32M
+.sp
+The value is only advisory and the final size of the extents may differ, depending on the state of the free space and fragmentation or other internal logic\&. Reasonable values are from tens to hundreds of megabytes\&.
+.RE
+.PP
+\-v
+.RS 4
+(deprecated) alias for global
+\fI\-v\fR
+option
+.RE
+.RE
+.PP
+\fBdu\fR [options] \fI<path>\fR [\fI<path>\fR\&.\&.]
+.RS 4
+Calculate disk usage of the target files using FIEMAP\&. For individual files, it will report a count of total bytes, and exclusive (not shared) bytes\&. We also calculate a
+\fIset shared\fR
+value which is described below\&.
+.sp
+Each argument to
+\fIbtrfs filesystem du\fR
+will have a
+\fIset shared\fR
+value calculated for it\&. We define each
+\fIset\fR
+as those files found by a recursive search of an argument (recursion descends to subvolumes but not mount points)\&. The
+\fIset shared\fR
+value then is a sum of all shared space referenced by the set\&.
+.sp
+\fIset shared\fR
+takes into account overlapping shared extents, hence it isn\(cqt as simple as adding up shared extents\&.
+.sp
+\fBOptions\fR
+.PP
+\-s|\-\-summarize
+.RS 4
+display only a total for each argument
+.RE
+.PP
+\-\-raw
+.RS 4
+raw numbers in bytes, without the
+\fIB\fR
+suffix\&.
+.RE
+.PP
+\-\-human\-readable
+.RS 4
+print human friendly numbers, base 1024, this is the default
+.RE
+.PP
+\-\-iec
+.RS 4
+select the 1024 base for the following options, according to the IEC standard\&.
+.RE
+.PP
+\-\-si
+.RS 4
+select the 1000 base for the following options, according to the SI standard\&.
+.RE
+.PP
+\-\-kbytes
+.RS 4
+show sizes in KiB, or kB with \-\-si\&.
+.RE
+.PP
+\-\-mbytes
+.RS 4
+show sizes in MiB, or MB with \-\-si\&.
+.RE
+.PP
+\-\-gbytes
+.RS 4
+show sizes in GiB, or GB with \-\-si\&.
+.RE
+.PP
+\-\-tbytes
+.RS 4
+show sizes in TiB, or TB with \-\-si\&.
+.RE
+.RE
+.PP
+\fBlabel\fR [\fI<device>\fR|\fI<mountpoint>\fR] [\fI<newlabel>\fR]
+.RS 4
+Show or update the label of a filesystem\&. This works on a mounted filesystem or a filesystem image\&.
+.sp
+The
+\fInewlabel\fR
+argument is optional\&. Current label is printed if the argument is omitted\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+the maximum allowable length shall be less than 256 chars and must not contain a newline\&. The trailing newline is stripped automatically\&.
+.sp .5v
+.RE
+.RE
+.PP
+\fBresize\fR [options] [\fI<devid>\fR:][+/\-]\fI<size>\fR[kKmMgGtTpPeE]|[\fI<devid>\fR:]max \fI<path>\fR
+.RS 4
+Resize a mounted filesystem identified by
+\fIpath\fR\&. A particular device can be resized by specifying a
+\fIdevid\fR\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBWarning\fR
+.ps -1
+.br
+If
+\fIpath\fR
+is a file containing a BTRFS image then resize does not work as expected and does not resize the image\&. This would resize the underlying filesystem instead\&.
+.sp .5v
+.RE
+The
+\fIdevid\fR
+can be found in the output of
+\fBbtrfs filesystem show\fR
+and defaults to 1 if not specified\&. The
+\fIsize\fR
+parameter specifies the new size of the filesystem\&. If the prefix
+\fI+\fR
+or
+\fI\-\fR
+is present the size is increased or decreased by the quantity
+\fIsize\fR\&. If no units are specified, bytes are assumed for
+\fIsize\fR\&. Optionally, the size parameter may be suffixed by one of the following unit designators: \*(AqK\*(Aq, \*(AqM\*(Aq, \*(AqG\*(Aq, \*(AqT\*(Aq, \*(AqP\*(Aq, or \*(AqE\*(Aq, which represent KiB, MiB, GiB, TiB, PiB, or EiB, respectively (case does not matter)\&.
+.sp
+If
+\fImax\fR
+is passed, the filesystem will occupy all available space on the device respecting
+\fIdevid\fR
+(remember, devid 1 by default)\&.
+.sp
+The resize command does not manipulate the size of underlying partition\&. If you wish to enlarge/reduce a filesystem, you must make sure you can expand the partition before enlarging the filesystem and shrink the partition after reducing the size of the filesystem\&. This can done using
+\fBfdisk\fR(8) or
+\fBparted\fR(8) to delete the existing partition and recreate it with the new desired size\&. When recreating the partition make sure to use the same starting partition offset as before\&.
+.sp
+Growing is usually instant as it only updates the size\&. However, shrinking could take a long time if there are data in the device area that\(cqs beyond the new end\&. Relocation of the data takes time\&.
+.sp
+See also section
+\fIEXAMPLES\fR\&.
+.sp
+\fBOptions\fR
+.PP
+\-\-enqueue
+.RS 4
+wait if there\(cqs another exclusive operation running, otherwise continue
+.RE
+.RE
+.PP
+\fBshow\fR [options] [\fI<path>\fR|\fI<uuid>\fR|\fI<device>\fR|\fI<label>\fR]
+.RS 4
+Show the btrfs filesystem with some additional info about devices and space allocation\&.
+.sp
+If no option none of
+\fIpath\fR/\fIuuid\fR/\fIdevice\fR/\fIlabel\fR
+is passed, information about all the BTRFS filesystems is shown, both mounted and unmounted\&.
+.sp
+\fBOptions\fR
+.PP
+\-m|\-\-mounted
+.RS 4
+probe kernel for mounted BTRFS filesystems
+.RE
+.PP
+\-d|\-\-all\-devices
+.RS 4
+scan all devices under /dev, otherwise the devices list is extracted from the /proc/partitions file\&. This is a fallback option if there\(cqs no device node manager (like udev) available in the system\&.
+.RE
+.PP
+\-\-raw
+.RS 4
+raw numbers in bytes, without the
+\fIB\fR
+suffix
+.RE
+.PP
+\-\-human\-readable
+.RS 4
+print human friendly numbers, base 1024, this is the default
+.RE
+.PP
+\-\-iec
+.RS 4
+select the 1024 base for the following options, according to the IEC standard
+.RE
+.PP
+\-\-si
+.RS 4
+select the 1000 base for the following options, according to the SI standard
+.RE
+.PP
+\-\-kbytes
+.RS 4
+show sizes in KiB, or kB with \-\-si
+.RE
+.PP
+\-\-mbytes
+.RS 4
+show sizes in MiB, or MB with \-\-si
+.RE
+.PP
+\-\-gbytes
+.RS 4
+show sizes in GiB, or GB with \-\-si
+.RE
+.PP
+\-\-tbytes
+.RS 4
+show sizes in TiB, or TB with \-\-si
+.RE
+.RE
+.PP
+\fBsync\fR \fI<path>\fR
+.RS 4
+Force a sync of the filesystem at
+\fIpath\fR, similar to the
+\fBsync\fR(1) command\&. In addition, it starts cleaning of deleted subvolumes\&. To wait for the subvolume deletion to complete use the
+\fBbtrfs subvolume sync\fR
+command\&.
+.RE
+.PP
+\fBusage\fR [options] \fI<path>\fR [\fI<path>\fR\&...]
+.RS 4
+Show detailed information about internal filesystem usage\&. This is supposed to replace the
+\fBbtrfs filesystem df\fR
+command in the long run\&.
+.sp
+The level of detail can differ if the command is run under a regular or the root user (due to use of restricted ioctl)\&. For both there\(cqs a summary section with information about space usage:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ btrfs filesystem usage /path
+WARNING: cannot read detailed chunk info, RAID5/6 numbers will be incorrect, run as root
+Overall:
+    Device size:                   1\&.82TiB
+    Device allocated:              1\&.17TiB
+    Device unallocated:          669\&.99GiB
+    Device missing:                  0\&.00B
+    Used:                          1\&.14TiB
+    Free (estimated):            692\&.57GiB      (min: 692\&.57GiB)
+    Free (statfs, df)            692\&.57GiB
+    Data ratio:                       1\&.00
+    Metadata ratio:                   1\&.00
+    Global reserve:              512\&.00MiB      (used: 0\&.00B)
+    Multiple profiles:                  no
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIDevice size\fR \(em sum of raw device capacity available to the filesystem
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIDevice allocated\fR \(em sum of total space allocated for data/metadata/system profiles, this also accounts space reserved but not yet used for extents
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIDevice unallocated\fR \(em the remaining unallocated space for future allocations (difference of the above two numbers)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIDevice missing\fR \(em sum of capacity of all missing devices
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIUsed\fR \(em sum of the used space of data/metadata/system profiles, not including the reserved space
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIFree (estimated)\fR \(em approximate size of the remaining free space usable for data, including currently allocated space and estimating the usage of the unallocated space based on the block group profiles, the
+\fImin\fR
+is the lower bound of the estimate in case multiple profiles are present
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIFree (statfs, df)\fR \(em the amount of space available for data as reported by the
+\fBstatfs\fR
+syscall, also returned as
+\fIAvail\fR
+in the output of
+\fIdf\fR\&. The value is calculated in a different way and may not match the estimate in some cases (eg\&. multiple profiles)\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIData ratio\fR \(em ratio of total space for data including redundancy or parity to the effectively usable data space, eg\&. single is 1\&.0, RAID1 is 2\&.0 and for RAID5/6 it depends on the number of devices
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIMetadata ratio\fR \(em dtto, for metadata
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIGlobal reserve\fR \(em portion of metadata currently used for global block reserve, used for emergency purposes (like deletion on a full filesystem)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIMultiple profiles\fR \(em what block group types (data, metadata) have more than one profile (single, raid1, \&...), see
+\fBbtrfs\fR(5) section
+\fIFILESYSTEMS WITH MULTIPLE BLOCK GROUP PROFILES\fR\&.
+.RE
+.sp
+And on a zoned filesystem there are two more lines in the
+\fIDevice\fR
+section:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+    Device zone unusable:          5\&.13GiB
+    Device zone size:            256\&.00MiB
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIDevice zone unusable\fR \(em sum of of space that\(cqs been used in the past but now is not due to COW and not referenced anymory, the chunks have to be reclaimed and zones reset to make it usable again
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIDevice zone size\fR \(em the reported zone size of the host\-managed device, same for all devices
+.RE
+.sp
+The root user will also see stats broken down by block group types:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+Data,single: Size:1\&.15TiB, Used:1\&.13TiB (98\&.26%)
+   /dev/sdb        1\&.15TiB
+
+Metadata,single: Size:12\&.00GiB, Used:6\&.45GiB (53\&.75%)
+   /dev/sdb       12\&.00GiB
+
+System,single: Size:32\&.00MiB, Used:144\&.00KiB (0\&.44%)
+   /dev/sdb       32\&.00MiB
+
+Unallocated:
+   /dev/sdb      669\&.99GiB
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+\fIData\fR
+is block group type,
+\fIsingle\fR
+is block group profile,
+\fISize\fR
+is total size occupied by this type,
+\fIUsed\fR
+is the actually used space, the percent is ratio of
+\fIUsed/Size\fR\&. The
+\fIUnallocated\fR
+is remaining space\&.
+.sp
+\fBOptions\fR
+.PP
+\-b|\-\-raw
+.RS 4
+raw numbers in bytes, without the
+\fIB\fR
+suffix
+.RE
+.PP
+\-h|\-\-human\-readable
+.RS 4
+print human friendly numbers, base 1024, this is the default
+.RE
+.PP
+\-H
+.RS 4
+print human friendly numbers, base 1000
+.RE
+.PP
+\-\-iec
+.RS 4
+select the 1024 base for the following options, according to the IEC standard
+.RE
+.PP
+\-\-si
+.RS 4
+select the 1000 base for the following options, according to the SI standard
+.RE
+.PP
+\-k|\-\-kbytes
+.RS 4
+show sizes in KiB, or kB with \-\-si
+.RE
+.PP
+\-m|\-\-mbytes
+.RS 4
+show sizes in MiB, or MB with \-\-si
+.RE
+.PP
+\-g|\-\-gbytes
+.RS 4
+show sizes in GiB, or GB with \-\-si
+.RE
+.PP
+\-t|\-\-tbytes
+.RS 4
+show sizes in TiB, or TB with \-\-si
+.RE
+.PP
+\-T
+.RS 4
+show data in tabular format
+.sp
+If conflicting options are passed, the last one takes precedence\&.
+.RE
+.RE
+.SH "EXAMPLES"
+.sp
+\fB$ btrfs filesystem defrag \-v \-r dir/\fR
+.sp
+Recursively defragment files under \fIdir/\fR, print files as they are processed\&. The file names will be printed in batches, similarly the amount of data triggered by defragmentation will be proportional to last N printed files\&. The system dirty memory throttling will slow down the defragmentation but there can still be a lot of IO load and the system may stall for a moment\&.
+.sp
+\fB$ btrfs filesystem defrag \-v \-r \-f dir/\fR
+.sp
+Recursively defragment files under \fIdir/\fR, be verbose and wait until all blocks are flushed before processing next file\&. You can note slower progress of the output and lower IO load (proportional to currently defragmented file)\&.
+.sp
+\fB$ btrfs filesystem defrag \-v \-r \-f \-clzo dir/\fR
+.sp
+Recursively defragment files under \fIdir/\fR, be verbose, wait until all blocks are flushed and force file compression\&.
+.sp
+\fB$ btrfs filesystem defrag \-v \-r \-t 64M dir/\fR
+.sp
+Recursively defragment files under \fIdir/\fR, be verbose and try to merge extents to be about 64MiB\&. As stated above, the success rate depends on actual free space fragmentation and the final result is not guaranteed to meet the target even if run repeatedly\&.
+.sp
+\fB$ btrfs filesystem resize \-1G /path\fR
+.sp
+\fB$ btrfs filesystem resize 1:\-1G /path\fR
+.sp
+Shrink size of the filesystem\(cqs device id 1 by 1GiB\&. The first syntax expects a device with id 1 to exist, otherwise fails\&. The second is equivalent and more explicit\&. For a single\-device filesystem it\(cqs typically not necessary to specify the devid though\&.
+.sp
+\fB$ btrfs filesystem resize max /path\fR
+.sp
+\fB$ btrfs filesystem resize 1:max /path\fR
+.sp
+Let\(cqs assume that devid 1 exists and the filesystem does not occupy the whole block device, eg\&. it has been enlarged and we want to grow the filesystem\&. By simply using \fImax\fR as size we will achieve that\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+There are two ways to minimize the filesystem on a given device\&. The \fBbtrfs inspect\-internal min\-dev\-size\fR command, or iteratively shrink in steps\&.
+.sp .5v
+.RE
+.SH "EXIT STATUS"
+.sp
+\fBbtrfs filesystem\fR returns a zero exit status if it succeeds\&. Non zero is returned in case of failure\&.
+.SH "AVAILABILITY"
+.sp
+\fBbtrfs\fR is part of btrfs\-progs\&. Please refer to the btrfs wiki \m[blue]\fBhttp://btrfs\&.wiki\&.kernel\&.org\fR\m[] for further details\&.
+.SH "SEE ALSO"
+.sp
+\fBbtrfs\-subvolume\fR(8), \fBmkfs\&.btrfs\fR(8),

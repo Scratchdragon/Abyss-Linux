@@ -1,0 +1,216 @@
+'\" t
+.\"     Title: btrfs-quota
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 09/20/2021
+.\"    Manual: Btrfs Manual
+.\"    Source: Btrfs v5.14.1
+.\"  Language: English
+.\"
+.TH "BTRFS\-QUOTA" "8" "09/20/2021" "Btrfs v5\&.14\&.1" "Btrfs Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+btrfs-quota \- control the global quota status of a btrfs filesystem
+.SH "SYNOPSIS"
+.sp
+\fBbtrfs quota\fR \fI<subcommand>\fR \fI<args>\fR
+.SH "DESCRIPTION"
+.sp
+The commands under \fBbtrfs quota\fR are used to affect the global status of quotas of a btrfs filesystem\&. The quota groups (qgroups) are managed by the subcommand \fBbtrfs qgroup\fR(8)\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+Qgroups are different than the traditional user quotas and designed to track shared and exclusive data per\-subvolume\&. Please refer to the section \fIHIERARCHICAL QUOTA GROUP CONCEPTS\fR for a detailed description\&.
+.sp .5v
+.RE
+.SS "PERFORMANCE IMPLICATIONS"
+.sp
+When quotas are activated, they affect all extent processing, which takes a performance hit\&. Activation of qgroups is not recommended unless the user intends to actually use them\&.
+.SS "STABILITY STATUS"
+.sp
+The qgroup implementation has turned out to be quite difficult as it affects the core of the filesystem operation\&. Qgroup users have hit various corner cases over time, such as incorrect accounting or system instability\&. The situation is gradually improving and issues found and fixed\&.
+.SH "HIERARCHICAL QUOTA GROUP CONCEPTS"
+.sp
+The concept of quota has a long\-standing tradition in the Unix world\&. Ever since computers allow multiple users to work simultaneously in one filesystem, there is the need to prevent one user from using up the entire space\&. Every user should get his fair share of the available resources\&.
+.sp
+In case of files, the solution is quite straightforward\&. Each file has an \fIowner\fR recorded along with it, and it has a size\&. Traditional quota just restricts the total size of all files that are owned by a user\&. The concept is quite flexible: if a user hits his quota limit, the administrator can raise it on the fly\&.
+.sp
+On the other hand, the traditional approach has only a poor solution to restrict directories\&. At installation time, the harddisk can be partitioned so that every directory (eg\&. /usr, /var/, \&...) that needs a limit gets its own partition\&. The obvious problem is that those limits cannot be changed without a reinstallation\&. The btrfs subvolume feature builds a bridge\&. Subvolumes correspond in many ways to partitions, as every subvolume looks like its own filesystem\&. With subvolume quota, it is now possible to restrict each subvolume like a partition, but keep the flexibility of quota\&. The space for each subvolume can be expanded or restricted on the fly\&.
+.sp
+As subvolumes are the basis for snapshots, interesting questions arise as to how to account used space in the presence of snapshots\&. If you have a file shared between a subvolume and a snapshot, whom to account the file to? The creator? Both? What if the file gets modified in the snapshot, should only these changes be accounted to it? But wait, both the snapshot and the subvolume belong to the same user home\&. I just want to limit the total space used by both! But somebody else might not want to charge the snapshots to the users\&.
+.sp
+Btrfs subvolume quota solves these problems by introducing groups of subvolumes and let the user put limits on them\&. It is even possible to have groups of groups\&. In the following, we refer to them as \fIqgroups\fR\&.
+.sp
+Each qgroup primarily tracks two numbers, the amount of total referenced space and the amount of exclusively referenced space\&.
+.PP
+referenced
+.RS 4
+space is the amount of data that can be reached from any of the subvolumes contained in the qgroup, while
+.RE
+.PP
+exclusive
+.RS 4
+is the amount of data where all references to this data can be reached from within this qgroup\&.
+.RE
+.SS "SUBVOLUME QUOTA GROUPS"
+.sp
+The basic notion of the Subvolume Quota feature is the quota group, short qgroup\&. Qgroups are notated as \fIlevel/id\fR, eg\&. the qgroup 3/2 is a qgroup of level 3\&. For level 0, the leading \fI0/\fR can be omitted\&. Qgroups of level 0 get created automatically when a subvolume/snapshot gets created\&. The ID of the qgroup corresponds to the ID of the subvolume, so 0/5 is the qgroup for the root subvolume\&. For the \fBbtrfs qgroup\fR command, the path to the subvolume can also be used instead of \fI0/ID\fR\&. For all higher levels, the ID can be chosen freely\&.
+.sp
+Each qgroup can contain a set of lower level qgroups, thus creating a hierarchy of qgroups\&. Figure 1 shows an example qgroup tree\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+                          +\-\-\-+
+                          |2/1|
+                          +\-\-\-+
+                         /     \e
+                   +\-\-\-+/       \e+\-\-\-+
+                   |1/1|         |1/2|
+                   +\-\-\-+         +\-\-\-+
+                  /     \e       /     \e
+            +\-\-\-+/       \e+\-\-\-+/       \e+\-\-\-+
+qgroups     |0/1|         |0/2|         |0/3|
+            +\-+\-+         +\-\-\-+         +\-\-\-+
+              |          /     \e       /     \e
+              |         /       \e     /       \e
+              |        /         \e   /         \e
+extents       1       2            3            4
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Figure1: Sample qgroup hierarchy
+.sp
+At the bottom, some extents are depicted showing which qgroups reference which extents\&. It is important to understand the notion of \fIreferenced\fR vs \fIexclusive\fR\&. In the example, qgroup 0/2 references extents 2 and 3, while 1/2 references extents 2\-4, 2/1 references all extents\&.
+.sp
+On the other hand, extent 1 is exclusive to 0/1, extent 2 is exclusive to 0/2, while extent 3 is neither exclusive to 0/2 nor to 0/3\&. But because both references can be reached from 1/2, extent 3 is exclusive to 1/2\&. All extents are exclusive to 2/1\&.
+.sp
+So exclusive does not mean there is no other way to reach the extent, but it does mean that if you delete all subvolumes contained in a qgroup, the extent will get deleted\&.
+.sp
+Exclusive of a qgroup conveys the useful information how much space will be freed in case all subvolumes of the qgroup get deleted\&.
+.sp
+All data extents are accounted this way\&. Metadata that belongs to a specific subvolume (i\&.e\&. its filesystem tree) is also accounted\&. Checksums and extent allocation information are not accounted\&.
+.sp
+In turn, the referenced count of a qgroup can be limited\&. All writes beyond this limit will lead to a \fIQuota Exceeded\fR error\&.
+.SS "INHERITANCE"
+.sp
+Things get a bit more complicated when new subvolumes or snapshots are created\&. The case of (empty) subvolumes is still quite easy\&. If a subvolume should be part of a qgroup, it has to be added to the qgroup at creation time\&. To add it at a later time, it would be necessary to at least rescan the full subvolume for a proper accounting\&.
+.sp
+Creation of a snapshot is the hard case\&. Obviously, the snapshot will reference the exact amount of space as its source, and both source and destination now have an exclusive count of 0 (the filesystem nodesize to be precise, as the roots of the trees are not shared)\&. But what about qgroups of higher levels? If the qgroup contains both the source and the destination, nothing changes\&. If the qgroup contains only the source, it might lose some exclusive\&.
+.sp
+But how much? The tempting answer is, subtract all exclusive of the source from the qgroup, but that is wrong, or at least not enough\&. There could have been an extent that is referenced from the source and another subvolume from that qgroup\&. This extent would have been exclusive to the qgroup, but not to the source subvolume\&. With the creation of the snapshot, the qgroup would also lose this extent from its exclusive set\&.
+.sp
+So how can this problem be solved? In the instant the snapshot gets created, we already have to know the correct exclusive count\&. We need to have a second qgroup that contains all the subvolumes as the first qgroup, except the subvolume we want to snapshot\&. The moment we create the snapshot, the exclusive count from the second qgroup needs to be copied to the first qgroup, as it represents the correct value\&. The second qgroup is called a tracking qgroup\&. It is only there in case a snapshot is needed\&.
+.SS "USE CASES"
+.sp
+Below are some usecases that do not mean to be extensive\&. You can find your own way how to integrate qgroups\&.
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBSINGLE-USER MACHINE\fR
+.RS 4
+.sp
+\fBReplacement for partitions\fR
+.sp
+The simplest use case is to use qgroups as simple replacement for partitions\&. Btrfs takes the disk as a whole, and /, /usr, /var, etc\&. are created as subvolumes\&. As each subvolume gets it own qgroup automatically, they can simply be restricted\&. No hierarchy is needed for that\&.
+.sp
+\fBTrack usage of snapshots\fR
+.sp
+When a snapshot is taken, a qgroup for it will automatically be created with the correct values\&. \fIReferenced\fR will show how much is in it, possibly shared with other subvolumes\&. \fIExclusive\fR will be the amount of space that gets freed when the subvolume is deleted\&.
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBMULTI-USER MACHINE\fR
+.RS 4
+.sp
+\fBRestricting homes\fR
+.sp
+When you have several users on a machine, with home directories probably under /home, you might want to restrict /home as a whole, while restricting every user to an individual limit as well\&. This is easily accomplished by creating a qgroup for /home , eg\&. 1/1, and assigning all user subvolumes to it\&. Restricting this qgroup will limit /home, while every user subvolume can get its own (lower) limit\&.
+.sp
+\fBAccounting snapshots to the user\fR
+.sp
+Let\(cqs say the user is allowed to create snapshots via some mechanism\&. It would only be fair to account space used by the snapshots to the user\&. This does not mean the user doubles his usage as soon as he takes a snapshot\&. Of course, files that are present in his home and the snapshot should only be accounted once\&. This can be accomplished by creating a qgroup for each user, say \fI1/UID\fR\&. The user home and all snapshots are assigned to this qgroup\&. Limiting it will extend the limit to all snapshots, counting files only once\&. To limit /home as a whole, a higher level group 2/1 replacing 1/1 from the previous example is needed, with all user qgroups assigned to it\&.
+.sp
+\fBDo not account snapshots\fR
+.sp
+On the other hand, when the snapshots get created automatically, the user has no chance to control them, so the space used by them should not be accounted to him\&. This is already the case when creating snapshots in the example from the previous section\&.
+.sp
+\fBSnapshots for backup purposes\fR
+.sp
+This scenario is a mixture of the previous two\&. The user can create snapshots, but some snapshots for backup purposes are being created by the system\&. The user\(cqs snapshots should be accounted to the user, not the system\&. The solution is similar to the one from section \fIAccounting snapshots to the user\fR, but do not assign system snapshots to user\(cqs qgroup\&.
+.RE
+.SH "SUBCOMMAND"
+.PP
+\fBdisable\fR \fI<path>\fR
+.RS 4
+Disable subvolume quota support for a filesystem\&.
+.RE
+.PP
+\fBenable\fR \fI<path>\fR
+.RS 4
+Enable subvolume quota support for a filesystem\&.
+.RE
+.PP
+\fBrescan\fR [\-s] \fI<path>\fR
+.RS 4
+Trash all qgroup numbers and scan the metadata again with the current config\&.
+.sp
+\fBOptions\fR
+.PP
+\-s
+.RS 4
+show status of a running rescan operation\&.
+.RE
+.PP
+\-w
+.RS 4
+wait for rescan operation to finish(can be already in progress)\&.
+.RE
+.RE
+.SH "EXIT STATUS"
+.sp
+\fBbtrfs quota\fR returns a zero exit status if it succeeds\&. Non zero is returned in case of failure\&.
+.SH "AVAILABILITY"
+.sp
+\fBbtrfs\fR is part of btrfs\-progs\&. Please refer to the btrfs wiki \m[blue]\fBhttp://btrfs\&.wiki\&.kernel\&.org\fR\m[] for further details\&.
+.SH "SEE ALSO"
+.sp
+\fBmkfs\&.btrfs\fR(8), \fBbtrfs\-subvolume\fR(8), \fBbtrfs\-qgroup\fR(8)

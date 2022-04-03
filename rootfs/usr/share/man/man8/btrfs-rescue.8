@@ -1,0 +1,192 @@
+'\" t
+.\"     Title: btrfs-rescue
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 09/20/2021
+.\"    Manual: Btrfs Manual
+.\"    Source: Btrfs v5.14.1
+.\"  Language: English
+.\"
+.TH "BTRFS\-RESCUE" "8" "09/20/2021" "Btrfs v5\&.14\&.1" "Btrfs Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+btrfs-rescue \- Recover a damaged btrfs filesystem
+.SH "SYNOPSIS"
+.sp
+\fBbtrfs rescue\fR \fI<subcommand>\fR \fI<args>\fR
+.SH "DESCRIPTION"
+.sp
+\fBbtrfs rescue\fR is used to try to recover a damaged btrfs filesystem\&.
+.SH "SUBCOMMAND"
+.PP
+\fBchunk\-recover\fR [options] \fI<device>\fR
+.RS 4
+Recover the chunk tree by scanning the devices
+.sp
+\fBOptions\fR
+.PP
+\-y
+.RS 4
+assume an answer of
+\fIyes\fR
+to all questions\&.
+.RE
+.PP
+\-h
+.RS 4
+help\&.
+.RE
+.PP
+\-v
+.RS 4
+(deprecated) alias for global
+\fI\-v\fR
+option
+.RE
+.RE
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+Since \fBchunk\-recover\fR will scan the whole device, it will be \fBVERY\fR slow especially executed on a large device\&.
+.sp .5v
+.RE
+.PP
+\fBfix\-device\-size\fR \fI<device>\fR
+.RS 4
+fix device size and super block total bytes values that are do not match
+.sp
+Kernel 4\&.11 starts to check the device size more strictly and this might mismatch the stored value of total bytes\&. See the exact error message below\&. Newer kernel will refuse to mount the filesystem where the values do not match\&. This error is not fatal and can be fixed\&. This command will fix the device size values if possible\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+BTRFS error (device sdb): super_total_bytes 92017859088384 mismatch with fs_devices total_rw_bytes 92017859094528
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+The mismatch may also exhibit as a kernel warning:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+WARNING: CPU: 3 PID: 439 at fs/btrfs/ctree\&.h:1559 btrfs_update_device+0x1c5/0x1d0 [btrfs]
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\fBsuper\-recover\fR [options] \fI<device>\fR
+.RS 4
+Recover bad superblocks from good copies\&.
+.sp
+\fBOptions\fR
+.PP
+\-y
+.RS 4
+assume an answer of
+\fIyes\fR
+to all questions\&.
+.RE
+.PP
+\-v
+.RS 4
+(deprecated) alias for global
+\fI\-v\fR
+option
+.RE
+.RE
+.PP
+\fBzero\-log\fR \fI<device>\fR
+.RS 4
+clear the filesystem log tree
+.sp
+This command will clear the filesystem log tree\&. This may fix a specific set of problem when the filesystem mount fails due to the log replay\&. See below for sample stacktraces that may show up in system log\&.
+.sp
+The common case where this happens was fixed a long time ago, so it is unlikely that you will see this particular problem, but the command is kept around\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+clearing the log may lead to loss of changes that were made since the last transaction commit\&. This may be up to 30 seconds (default commit period) or less if the commit was implied by other filesystem activity\&.
+.sp .5v
+.RE
+One can determine whether
+\fBzero\-log\fR
+is needed according to the kernel backtrace:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+? replay_one_dir_item+0xb5/0xb5 [btrfs]
+? walk_log_tree+0x9c/0x19d [btrfs]
+? btrfs_read_fs_root_no_radix+0x169/0x1a1 [btrfs]
+? btrfs_recover_log_trees+0x195/0x29c [btrfs]
+? replay_one_dir_item+0xb5/0xb5 [btrfs]
+? btree_read_extent_buffer_pages+0x76/0xbc [btrfs]
+? open_ctree+0xff6/0x132c [btrfs]
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+If the errors are like above, then
+\fBzero\-log\fR
+should be used to clear the log and the filesystem may be mounted normally again\&. The keywords to look for are
+\fIopen_ctree\fR
+which says that it\(cqs during mount and function names that contain
+\fIreplay\fR,
+\fIrecover\fR
+or
+\fIlog_tree\fR\&.
+.RE
+.SH "EXIT STATUS"
+.sp
+\fBbtrfs rescue\fR returns a zero exit status if it succeeds\&. Non zero is returned in case of failure\&.
+.SH "AVAILABILITY"
+.sp
+\fBbtrfs\fR is part of btrfs\-progs\&. Please refer to the btrfs wiki \m[blue]\fBhttp://btrfs\&.wiki\&.kernel\&.org\fR\m[] for further details\&.
+.SH "SEE ALSO"
+.sp
+\fBmkfs\&.btrfs\fR(8), \fBbtrfs\-scrub\fR(8), \fBbtrfs\-check\fR(8)

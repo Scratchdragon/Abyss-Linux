@@ -1,0 +1,440 @@
+'\" t
+.\"     Title: btrfs-subvolume
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 09/20/2021
+.\"    Manual: Btrfs Manual
+.\"    Source: Btrfs v5.14.1
+.\"  Language: English
+.\"
+.TH "BTRFS\-SUBVOLUME" "8" "09/20/2021" "Btrfs v5\&.14\&.1" "Btrfs Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+btrfs-subvolume \- manage btrfs subvolumes
+.SH "SYNOPSIS"
+.sp
+\fBbtrfs subvolume\fR \fI<subcommand>\fR [\fI<args>\fR]
+.SH "DESCRIPTION"
+.sp
+\fBbtrfs subvolume\fR is used to create/delete/list/show btrfs subvolumes and snapshots\&.
+.SH "SUBVOLUME AND SNAPSHOT"
+.sp
+A subvolume is a part of filesystem with its own independent file/directory hierarchy\&. Subvolumes can share file extents\&. A snapshot is also subvolume, but with a given initial content of the original subvolume\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+A subvolume in btrfs is not like an LVM logical volume, which is block\-level snapshot while btrfs subvolumes are file extent\-based\&.
+.sp .5v
+.RE
+.sp
+A subvolume looks like a normal directory, with some additional operations described below\&. Subvolumes can be renamed or moved, nesting subvolumes is not restricted but has some implications regarding snapshotting\&.
+.sp
+A subvolume in btrfs can be accessed in two ways:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+like any other directory that is accessible to the user
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+like a separately mounted filesystem (options
+\fIsubvol\fR
+or
+\fIsubvolid\fR)
+.RE
+.sp
+In the latter case the parent directory is not visible and accessible\&. This is similar to a bind mount, and in fact the subvolume mount does exactly that\&.
+.sp
+A freshly created filesystem is also a subvolume, called \fItop\-level\fR, internally has an id 5\&. This subvolume cannot be removed or replaced by another subvolume\&. This is also the subvolume that will be mounted by default, unless the default subvolume has been changed (see subcommand \fIset\-default\fR)\&.
+.sp
+A snapshot is a subvolume like any other, with given initial content\&. By default, snapshots are created read\-write\&. File modifications in a snapshot do not affect the files in the original subvolume\&.
+.SH "SUBCOMMAND"
+.PP
+\fBcreate\fR [\-i \fI<qgroupid>\fR] [<dest>/]\fI<name>\fR
+.RS 4
+Create a subvolume
+\fI<name>\fR
+in
+\fI<dest>\fR\&.
+.sp
+If
+\fI<dest>\fR
+is not given, subvolume
+\fI<name>\fR
+will be created in the current directory\&.
+.sp
+\fBOptions\fR
+.PP
+\-i \fI<qgroupid>\fR
+.RS 4
+Add the newly created subvolume to a qgroup\&. This option can be given multiple times\&.
+.RE
+.RE
+.PP
+\fBdelete\fR [options] \fI<[<subvolume>\fR [\fI<subvolume>\fR\&...]], \fBdelete\fR \-i|\-\-subvolid \fI<subvolid>\fR \fI<path>\fR>
+.RS 4
+Delete the subvolume(s) from the filesystem\&.
+.sp
+If
+\fI<subvolume>\fR
+is not a subvolume, btrfs returns an error but continues if there are more arguments to process\&.
+.sp
+If \-\-subvolid is used,
+\fI<path>\fR
+must point to a btrfs filesystem\&. See
+\fBbtrfs subvolume list\fR
+or
+\fBbtrfs inspect\-internal rootid\fR
+how to get the subvolume id\&.
+.sp
+The corresponding directory is removed instantly but the data blocks are removed later in the background\&. The command returns immediately\&. See
+\fBbtrfs subvolume sync\fR
+how to wait until the subvolume gets completely removed\&.
+.sp
+The deletion does not involve full transaction commit by default due to performance reasons\&. As a consequence, the subvolume may appear again after a crash\&. Use one of the
+\fI\-\-commit\fR
+options to wait until the operation is safely stored on the device\&.
+.sp
+The default subvolume (see
+\fBbtrfs subvolume set\-default\fR) cannot be deleted and returns error (EPERM) and this is logged to the system log\&. A subvolume that\(cqs currently involved in send (see
+\fBbtrfs send\fR) also cannot be deleted until the send is finished\&. This is also logged in the system log\&.
+.sp
+\fBOptions\fR
+.PP
+\-c|\-\-commit\-after
+.RS 4
+wait for transaction commit at the end of the operation\&.
+.RE
+.PP
+\-C|\-\-commit\-each
+.RS 4
+wait for transaction commit after deleting each subvolume\&.
+.RE
+.PP
+\-i|\-\-subvolid \fI<subvolid>\fR
+.RS 4
+subvolume id to be removed instead of the
+\fI<path>\fR
+that should point to the filesystem with the subvolume
+.RE
+.PP
+\-v|\-\-verbose
+.RS 4
+(deprecated) alias for global
+\fI\-v\fR
+option
+.RE
+.RE
+.PP
+\fBfind\-new\fR \fI<subvolume>\fR \fI<last_gen>\fR
+.RS 4
+List the recently modified files in a subvolume, after
+\fI<last_gen>\fR
+generation\&.
+.RE
+.PP
+\fBget\-default\fR \fI<path>\fR
+.RS 4
+Get the default subvolume of the filesystem
+\fI<path>\fR\&.
+.sp
+The output format is similar to
+\fBsubvolume list\fR
+command\&.
+.RE
+.PP
+\fBlist\fR [options] [\-G [+|\-]\fI<value>\fR] [\-C [+|\-]\fI<value>\fR] [\-\-sort=rootid,gen,ogen,path] \fI<path>\fR
+.RS 4
+List the subvolumes present in the filesystem
+\fI<path>\fR\&.
+.sp
+For every subvolume the following information is shown by default:
+.sp
+ID
+\fI<ID>\fR
+gen
+\fI<generation>\fR
+top level
+\fI<ID>\fR
+path
+\fI<path>\fR
+.sp
+where ID is subvolume\(cqs id, gen is an internal counter which is updated every transaction, top level is the same as parent subvolume\(cqs id, and path is the relative path of the subvolume to the top level subvolume\&. The subvolume\(cqs ID may be used by the subvolume set\-default command, or at mount time via the subvolid= option\&.
+.sp
+\fBOptions\fR
+.PP
+Path filtering
+.RS 4
+.PP
+\-o
+.RS 4
+print only subvolumes below specified
+\fI<path>\fR\&.
+.RE
+.PP
+\-a
+.RS 4
+print all the subvolumes in the filesystem and distinguish between absolute and relative path with respect to the given
+\fI<path>\fR\&.
+.RE
+.RE
+.PP
+Field selection
+.RS 4
+.PP
+\-p
+.RS 4
+print the parent ID (\fIparent\fR
+here means the subvolume which contains this subvolume)\&.
+.RE
+.PP
+\-c
+.RS 4
+print the ogeneration of the subvolume, aliases: ogen or origin generation\&.
+.RE
+.PP
+\-g
+.RS 4
+print the generation of the subvolume (default)\&.
+.RE
+.PP
+\-u
+.RS 4
+print the UUID of the subvolume\&.
+.RE
+.PP
+\-q
+.RS 4
+print the parent UUID of the subvolume (\fIparent\fR
+here means subvolume of which this subvolume is a snapshot)\&.
+.RE
+.PP
+\-R
+.RS 4
+print the UUID of the sent subvolume, where the subvolume is the result of a receive operation\&.
+.RE
+.RE
+.PP
+Type filtering
+.RS 4
+.PP
+\-s
+.RS 4
+only snapshot subvolumes in the filesystem will be listed\&.
+.RE
+.PP
+\-r
+.RS 4
+only readonly subvolumes in the filesystem will be listed\&.
+.RE
+.PP
+\-d
+.RS 4
+list deleted subvolumes that are not yet cleaned\&.
+.RE
+.RE
+.PP
+Other
+.RS 4
+.PP
+\-t
+.RS 4
+print the result as a table\&.
+.RE
+.RE
+.PP
+Sorting
+.RS 4
+By default the subvolumes will be sorted by subvolume ID ascending\&.
+.PP
+\-G [+|\-]\fI<value>\fR
+.RS 4
+list subvolumes in the filesystem that its generation is >=, \(la or = value\&. \*(Aq+\*(Aq means >= value, \*(Aq\-\*(Aq means <= value, If there is neither \*(Aq+\*(Aq nor \*(Aq\-\*(Aq, it means = value\&.
+.RE
+.PP
+\-C [+|\-]\fI<value>\fR
+.RS 4
+list subvolumes in the filesystem that its ogeneration is >=, <= or = value\&. The usage is the same to
+\fI\-G\fR
+option\&.
+.RE
+.PP
+\-\-sort=rootid,gen,ogen,path
+.RS 4
+list subvolumes in order by specified items\&. you can add \*(Aq+\*(Aq or \*(Aq\-\*(Aq in front of each items, \*(Aq+\*(Aq means ascending, \*(Aq\-\*(Aq means descending\&. The default is ascending\&.
+.sp
+for \-\-sort you can combine some items together by \*(Aq,\*(Aq, just like \-\-sort=+ogen,\-gen,path,rootid\&.
+.RE
+.RE
+.RE
+.PP
+\fBset\-default\fR [\fI<subvolume>\fR|\fI<id>\fR \fI<path>\fR]
+.RS 4
+Set the default subvolume for the (mounted) filesystem\&.
+.sp
+Set the default subvolume for the (mounted) filesystem at
+\fI<path>\fR\&. This will hide the top\-level subvolume (i\&.e\&. the one mounted with
+\fIsubvol=/\fR
+or
+\fIsubvolid=5\fR)\&. Takes action on next mount\&.
+.sp
+There are two ways how to specify the subvolume, by
+\fI<id>\fR
+or by the
+\fI<subvolume>\fR
+path\&. The id can be obtained from
+\fBbtrfs subvolume list\fR,
+\fBbtrfs subvolume show\fR
+or
+\fBbtrfs inspect\-internal rootid\fR\&.
+.RE
+.PP
+\fBshow\fR [options] \fI<path>\fR
+.RS 4
+Show more information about a subvolume (UUIDs, generations, times, flags, related snapshots)\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+/mnt/btrfs/subvolume
+        Name:                   subvolume
+        UUID:                   5e076a14\-4e42\-254d\-ac8e\-55bebea982d1
+        Parent UUID:            \-
+        Received UUID:          \-
+        Creation time:          2018\-01\-01 12:34:56 +0000
+        Subvolume ID:           79
+        Generation:             2844
+        Gen at creation:        2844
+        Parent ID:              5
+        Top level ID:           5
+        Flags:                  \-
+        Snapshot(s):
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+\fBOptions\fR
+.PP
+\-r|\-\-rootid \fI<ID>\fR
+.RS 4
+show details about subvolume with root
+\fI<ID>\fR, looked up in
+\fI<path>\fR
+.RE
+.PP
+\-u|\-\-uuid UUID
+.RS 4
+show details about subvolume with the given
+\fI<UUID>\fR, looked up in
+\fI<path>\fR
+.RE
+.RE
+.PP
+\fBsnapshot\fR [\-r] [\-i \fI<qgroupid>\fR] \fI<source>\fR \fI<dest>\fR|[<dest>/]\fI<name>\fR
+.RS 4
+Create a snapshot of the subvolume
+\fI<source>\fR
+with the name
+\fI<name>\fR
+in the
+\fI<dest>\fR
+directory\&.
+.sp
+If only
+\fI<dest>\fR
+is given, the subvolume will be named the basename of
+\fI<source>\fR\&. If
+\fI<source>\fR
+is not a subvolume, btrfs returns an error\&.
+.sp
+\fBOptions\fR
+.PP
+\-r
+.RS 4
+Make the new snapshot read only\&.
+.RE
+.PP
+\-i \fI<qgroupid>\fR
+.RS 4
+Add the newly created subvolume to a qgroup\&. This option can be given multiple times\&.
+.RE
+.RE
+.PP
+\fBsync\fR \fI<path>\fR [subvolid\&...]
+.RS 4
+Wait until given subvolume(s) are completely removed from the filesystem after deletion\&. If no subvolume id is given, wait until all current deletion requests are completed, but do not wait for subvolumes deleted in the meantime\&.
+.sp
+\fBOptions\fR
+.PP
+\-s \fI<N>\fR
+.RS 4
+sleep N seconds between checks (default: 1)
+.RE
+.RE
+.SH "EXAMPLES"
+.PP
+\fBExample\ \&1.\ \&Deleting a subvolume\fR
+.sp
+If we want to delete a subvolume called \fBfoo\fR from a btrfs volume mounted at \fB/mnt/bar\fR we could run the following:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+btrfs subvolume delete /mnt/bar/foo
+.fi
+.if n \{\
+.RE
+.\}
+.SH "EXIT STATUS"
+.sp
+\fBbtrfs subvolume\fR returns a zero exit status if it succeeds\&. A non\-zero value is returned in case of failure\&.
+.SH "AVAILABILITY"
+.sp
+\fBbtrfs\fR is part of btrfs\-progs\&. Please refer to the btrfs wiki \m[blue]\fBhttp://btrfs\&.wiki\&.kernel\&.org\fR\m[] for further details\&.
+.SH "SEE ALSO"
+.sp
+\fBmkfs\&.btrfs\fR(8), \fBmount\fR(8), \fBbtrfs\-quota\fR(8), \fBbtrfs\-qgroup\fR(8),

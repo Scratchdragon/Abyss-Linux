@@ -1,0 +1,284 @@
+'\" t
+.\"     Title: btrfs-convert
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 09/20/2021
+.\"    Manual: Btrfs Manual
+.\"    Source: Btrfs v5.14.1
+.\"  Language: English
+.\"
+.TH "BTRFS\-CONVERT" "8" "09/20/2021" "Btrfs v5\&.14\&.1" "Btrfs Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+btrfs-convert \- convert from ext2/3/4 or reiserfs filesystem to btrfs in\-place
+.SH "SYNOPSIS"
+.sp
+\fBbtrfs\-convert\fR [options] \fI<device>\fR
+.SH "DESCRIPTION"
+.sp
+\fBbtrfs\-convert\fR is used to convert existing source filesystem image to a btrfs filesystem in\-place\&. The original filesystem image is accessible in subvolume named like \fIext2_saved\fR as file \fIimage\fR\&.
+.sp
+Supported filesystems:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+ext2, ext3, ext4 \(em original feature, always built in
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+reiserfs \(em since version 4\&.13, optionally built, requires libreiserfscore 3\&.6\&.27
+.RE
+.sp
+The list of supported source filesystem by a given binary is listed at the end of help (option \fI\-\-help\fR)\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBWarning\fR
+.ps -1
+.br
+.sp
+If you are going to perform rollback to the original filesystem, you should not execute \fBbtrfs balance\fR command on the converted filesystem\&. This will change the extent layout and make \fBbtrfs\-convert\fR unable to rollback\&.
+.sp .5v
+.RE
+.sp
+The conversion utilizes free space of the original filesystem\&. The exact estimate of the required space cannot be foretold\&. The final btrfs metadata might occupy several gigabytes on a hundreds\-gigabyte filesystem\&.
+.sp
+If the ability to rollback is no longer important, the it is recommended to perform a few more steps to transition the btrfs filesystem to a more compact layout\&. This is because the conversion inherits the original data blocks\*(Aq fragmentation, and also because the metadata blocks are bound to the original free space layout\&.
+.sp
+Due to different constraints, it is only possible to convert filesystems that have a supported data block size (ie\&. the same that would be valid for \fImkfs\&.btrfs\fR)\&. This is typically the system page size (4KiB on x86_64 machines)\&.
+.sp
+\fBBEFORE YOU START\fR
+.sp
+The source filesystem must be clean, eg\&. no journal to replay or no repairs needed\&. The respective \fIfsck\fR utility must be run on the source filesytem prior to conversion\&. Please refer to the manual pages in case you encounter problems\&.
+.sp
+For ext2/3/4:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+# e2fsck \-fvy /dev/sdx
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+For reiserfs:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+# reiserfsck \-fy /dev/sdx
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Skipping that step could lead to incorrect results on the target filesystem, but it may work\&.
+.sp
+\fBREMOVE THE ORIGINAL FILESYSTEM METADATA\fR
+.sp
+By removing the subvolume named like \fIext2_saved\fR or \fIreiserfs_saved\fR, all metadata of the original filesystem will be removed:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+# btrfs subvolume delete /mnt/ext2_saved
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+At this point it is not possible to do a rollback\&. The filesystem is usable but may be impacted by the fragmentation inherited from the original filesystem\&.
+.sp
+\fBMAKE FILE DATA MORE CONTIGUOUS\fR
+.sp
+An optional but recommended step is to run defragmentation on the entire filesystem\&. This will attempt to make file extents more contiguous\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+# btrfs filesystem defrag \-v \-r \-f \-t 32M /mnt/btrfs
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Verbose recursive defragmentation (\fI\-v\fR, \fI\-r\fR), flush data per\-file (\fI\-f\fR) with target extent size 32MiB (\fI\-t\fR)\&.
+.sp
+\fBATTEMPT TO MAKE BTRFS METADATA MORE COMPACT\fR
+.sp
+Optional but recommended step\&.
+.sp
+The metadata block groups after conversion may be smaller than the default size (256MiB or 1GiB)\&. Running a balance will attempt to merge the block groups\&. This depends on the free space layout (and fragmentation) and may fail due to lack of enough work space\&. This is a soft error leaving the filesystem usable but the block group layout may remain unchanged\&.
+.sp
+Note that balance operation takes a lot of time, please see also \fBbtrfs\-balance\fR(8)\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+# btrfs balance start \-m /mnt/btrfs
+.fi
+.if n \{\
+.RE
+.\}
+.SH "OPTIONS"
+.PP
+\-\-csum \fI<type>\fR, \-\-checksum \fI<type>\fR
+.RS 4
+Specify the checksum algorithm\&. Default is
+\fIcrc32c\fR\&. Valid values are
+\fIcrc32c\fR,
+\fIxxhash\fR,
+\fIsha256\fR
+or
+\fIblake2\fR\&. To mount such filesystem kernel must support the checksums as well\&.
+.RE
+.PP
+\-d|\-\-no\-datasum
+.RS 4
+disable data checksum calculations and set the NODATASUM file flag, this can speed up the conversion
+.RE
+.PP
+\-i|\-\-no\-xattr
+.RS 4
+ignore xattrs and ACLs of files
+.RE
+.PP
+\-n|\-\-no\-inline
+.RS 4
+disable inlining of small files to metadata blocks, this will decrease the metadata consumption and may help to convert a filesystem with low free space
+.RE
+.PP
+\-N|\-\-nodesize \fI<SIZE>\fR
+.RS 4
+set filesystem nodesize, the tree block size in which btrfs stores its metadata\&. The default value is 16KB (16384) or the page size, whichever is bigger\&. Must be a multiple of the sectorsize, but not larger than 65536\&. See
+\fBmkfs\&.btrfs\fR(8) for more details\&.
+.RE
+.PP
+\-r|\-\-rollback
+.RS 4
+rollback to the original ext2/3/4 filesystem if possible
+.RE
+.PP
+\-l|\-\-label \fI<LABEL>\fR
+.RS 4
+set filesystem label during conversion
+.RE
+.PP
+\-L|\-\-copy\-label
+.RS 4
+use label from the converted filesystem
+.RE
+.PP
+\-O|\-\-features \fI<feature1>\fR[,\fI<feature2>\fR\&...]
+.RS 4
+A list of filesystem features enabled the at time of conversion\&. Not all features are supported by old kernels\&. To disable a feature, prefix it with
+\fI^\fR\&. Description of the features is in section
+\fIFILESYSTEM FEATURES\fR
+of
+\fBmkfs\&.btrfs\fR(8)\&.
+.sp
+To see all available features that btrfs\-convert supports run:
+.sp
+\fBbtrfs\-convert \-O list\-all\fR
+.RE
+.PP
+\-p|\-\-progress
+.RS 4
+show progress of conversion (a heartbeat indicator and number of inodes processed), on by default
+.RE
+.PP
+\-\-no\-progress
+.RS 4
+disable progress and show only the main phases of conversion
+.RE
+.PP
+\-\-uuid \fI<SPEC>\fR
+.RS 4
+set the FSID of the new filesystem based on
+\fISPEC\fR:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fInew\fR
+\- (default) generate UUID for the FSID of btrfs
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIcopy\fR
+\- copy UUID from the source filesystem
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIUUID\fR
+\- a conforming UUID value, the 36 byte string representation
+.RE
+.RE
+.SH "EXIT STATUS"
+.sp
+\fBbtrfs\-convert\fR will return 0 if no error happened\&. If any problems happened, 1 will be returned\&.
+.SH "SEE ALSO"
+.sp
+\fBmkfs\&.btrfs\fR(8)

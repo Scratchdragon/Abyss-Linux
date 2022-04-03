@@ -1,0 +1,536 @@
+'\" t
+.\"     Title: btrfs-device
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 09/20/2021
+.\"    Manual: Btrfs Manual
+.\"    Source: Btrfs v5.14.1
+.\"  Language: English
+.\"
+.TH "BTRFS\-DEVICE" "8" "09/20/2021" "Btrfs v5\&.14\&.1" "Btrfs Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+btrfs-device \- manage devices of btrfs filesystems
+.SH "SYNOPSIS"
+.sp
+\fBbtrfs device\fR \fI<subcommand>\fR \fI<args>\fR
+.SH "DESCRIPTION"
+.sp
+The \fBbtrfs device\fR command group is used to manage devices of the btrfs filesystems\&.
+.SH "DEVICE MANAGEMENT"
+.sp
+Btrfs filesystem can be created on top of single or multiple block devices\&. Data and metadata are organized in allocation profiles with various redundancy policies\&. There\(cqs some similarity with traditional RAID levels, but this could be confusing to users familiar with the traditional meaning\&. Due to the similarity, the RAID terminology is widely used in the documentation\&. See \fBmkfs\&.btrfs\fR(8) for more details and the exact profile capabilities and constraints\&.
+.sp
+The device management works on a mounted filesystem\&. Devices can be added, removed or replaced, by commands provided by \fBbtrfs device\fR and \fBbtrfs replace\fR\&.
+.sp
+The profiles can be also changed, provided there\(cqs enough workspace to do the conversion, using the \fBbtrfs balance\fR command and namely the filter \fIconvert\fR\&.
+.PP
+Type
+.RS 4
+The block group profile type is the main distinction of the information stored on the block device\&. User data are called
+\fIData\fR, the internal data structures managed by filesystem are
+\fIMetadata\fR
+and
+\fISystem\fR\&.
+.RE
+.PP
+Profile
+.RS 4
+A profile describes an allocation policy based on the redundancy/replication constraints in connection with the number of devices\&. The profile applies to data and metadata block groups separately\&. Eg\&.
+\fIsingle\fR,
+\fIRAID1\fR\&.
+.RE
+.PP
+RAID level
+.RS 4
+Where applicable, the level refers to a profile that matches constraints of the standard RAID levels\&. At the moment the supported ones are: RAID0, RAID1, RAID10, RAID5 and RAID6\&.
+.RE
+.sp
+See the section \fBTYPICAL USECASES\fR for some examples\&.
+.SH "SUBCOMMAND"
+.PP
+\fBadd\fR [\-Kf] \fI<device>\fR [\fI<device>\fR\&...] \fI<path>\fR
+.RS 4
+Add device(s) to the filesystem identified by
+\fI<path>\fR\&.
+.sp
+If applicable, a whole device discard (TRIM) operation is performed prior to adding the device\&. A device with existing filesystem detected by
+\fBblkid\fR(8) will prevent device addition and has to be forced\&. Alternatively the filesystem can be wiped from the device using eg\&. the
+\fBwipefs\fR(8) tool\&.
+.sp
+The operation is instant and does not affect existing data\&. The operation merely adds the device to the filesystem structures and creates some block groups headers\&.
+.sp
+\fBOptions\fR
+.PP
+\-K|\-\-nodiscard
+.RS 4
+do not perform discard (TRIM) by default
+.RE
+.PP
+\-f|\-\-force
+.RS 4
+force overwrite of existing filesystem on the given disk(s)
+.RE
+.PP
+\-\-enqueue
+.RS 4
+wait if there\(cqs another exclusive operation running, otherwise continue
+.RE
+.RE
+.PP
+\fBremove\fR [options] \fI<device>\fR|\fI<devid>\fR [\fI<device>\fR|\fI<devid>\fR\&...] \fI<path>\fR
+.RS 4
+Remove device(s) from a filesystem identified by
+\fI<path>\fR
+.sp
+Device removal must satisfy the profile constraints, otherwise the command fails\&. The filesystem must be converted to profile(s) that would allow the removal\&. This can typically happen when going down from 2 devices to 1 and using the RAID1 profile\&. See the
+\fBTYPICAL USECASES\fR
+section below\&.
+.sp
+The operation can take long as it needs to move all data from the device\&.
+.sp
+It is possible to delete the device that was used to mount the filesystem\&. The device entry in the mount table will be replaced by another device name with the lowest device id\&.
+.sp
+If the filesystem is mounted in degraded mode (\-o degraded), special term
+\fImissing\fR
+can be used for
+\fIdevice\fR\&. In that case, the first device that is described by the filesystem metadata, but not present at the mount time will be removed\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+In most cases, there is only one missing device in degraded mode, otherwise mount fails\&. If there are two or more devices missing (e\&.g\&. possible in RAID6), you need specify
+\fImissing\fR
+as many times as the number of missing devices to remove all of them\&.
+.sp .5v
+.RE
+\fBOptions\fR
+.PP
+\-\-enqueue
+.RS 4
+wait if there\(cqs another exclusive operation running, otherwise continue
+.RE
+.RE
+.PP
+\fBdelete\fR \fI<device>\fR|\fI<devid>\fR [\fI<device>\fR|\fI<devid>\fR\&...] \fI<path>\fR
+.RS 4
+Alias of remove kept for backward compatibility
+.RE
+.PP
+\fBready\fR \fI<device>\fR
+.RS 4
+Wait until all devices of a multiple\-device filesystem are scanned and registered within the kernel module\&. This is to provide a way for automatic filesystem mounting tools to wait before the mount can start\&. The device scan is only one of the preconditions and the mount can fail for other reasons\&. Normal users usually do not need this command and may safely ignore it\&.
+.RE
+.PP
+\fBscan\fR [options] [\fI<device>\fR [\fI<device>\fR\&...]]
+.RS 4
+Scan devices for a btrfs filesystem and register them with the kernel module\&. This allows mounting multiple\-device filesystem by specifying just one from the whole group\&.
+.sp
+If no devices are passed, all block devices that blkid reports to contain btrfs are scanned\&.
+.sp
+The options
+\fI\-\-all\-devices\fR
+or
+\fI\-d\fR
+can be used as a fallback in case blkid is not available\&. If used, behavior is the same as if no devices are passed\&.
+.sp
+The command can be run repeatedly\&. Devices that have been already registered remain as such\&. Reloading the kernel module will drop this information\&. There\(cqs an alternative way of mounting multiple\-device filesystem without the need for prior scanning\&. See the mount option
+\fIdevice\fR\&.
+.sp
+\fBOptions\fR
+.PP
+\-d|\-\-all\-devices
+.RS 4
+Enumerate and register all devices, use as a fallback in case blkid is not available\&.
+.RE
+.PP
+\-u|\-\-forget
+.RS 4
+Unregister a given device or all stale devices if no path is given, the device must be unmounted otherwise it\(cqs an error\&.
+.RE
+.RE
+.PP
+\fBstats\fR [options] \fI<path>\fR|\fI<device>\fR
+.RS 4
+Read and print the device IO error statistics for all devices of the given filesystem identified by
+\fI<path>\fR
+or for a single
+\fI<device>\fR\&. The filesystem must be mounted\&. See section
+\fBDEVICE STATS\fR
+for more information about the reported statistics and the meaning\&.
+.sp
+\fBOptions\fR
+.PP
+\-z|\-\-reset
+.RS 4
+Print the stats and reset the values to zero afterwards\&.
+.RE
+.PP
+\-c|\-\-check
+.RS 4
+Check if the stats are all zeros and return 0 if it is so\&. Set bit 6 of the return code if any of the statistics is no\-zero\&. The error values is 65 if reading stats from at least one device failed, otherwise it\(cqs 64\&.
+.RE
+.RE
+.PP
+\fBusage\fR [options] \fI<path>\fR [\fI<path>\fR\&...]
+.RS 4
+Show detailed information about internal allocations on devices\&.
+.sp
+The level of detail can differ if the command is run under a regular or the root user (due to use of restricted ioctls)\&. The first example below is for normal user (warning included) and the next one with root on the same filesystem:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+WARNING: cannot read detailed chunk info, per\-device usage will not be shown, run as root
+/dev/sdc1, ID: 1
+   Device size:           931\&.51GiB
+   Device slack:              0\&.00B
+   Unallocated:           931\&.51GiB
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+/dev/sdc1, ID: 1
+   Device size:           931\&.51GiB
+   Device slack:              0\&.00B
+   Data,single:           641\&.00GiB
+   Data,RAID0/3:            1\&.00GiB
+   Metadata,single:        19\&.00GiB
+   System,single:          32\&.00MiB
+   Unallocated:           271\&.48GiB
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIDevice size\fR \(em size of the device as seen by the filesystem (may be different than actual device size)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIDevice slack\fR \(em portion of device not used by the filesystem but still available in the physical space provided by the device, eg\&. after a device shrink
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIData,single\fR,
+\fIMetadata,single\fR,
+\fISystem,single\fR \(em in general, list of block group type (Data, Metadata, System) and profile (single, RAID1, \&...) allocated on the device
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIData,RAID0/3\fR \(em in particular, striped profiles RAID0/RAID10/RAID5/RAID6 with the number of devices on which the stripes are allocated, multiple occurences of the same profile can appear in case a new device has been added and all new available stripes have been used for writes
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIUnallocated\fR \(em remaining space that the filesystem can still use for new block groups
+.RE
+.sp
+\fBOptions\fR
+.PP
+\-b|\-\-raw
+.RS 4
+raw numbers in bytes, without the
+\fIB\fR
+suffix
+.RE
+.PP
+\-h|\-\-human\-readable
+.RS 4
+print human friendly numbers, base 1024, this is the default
+.RE
+.PP
+\-H
+.RS 4
+print human friendly numbers, base 1000
+.RE
+.PP
+\-\-iec
+.RS 4
+select the 1024 base for the following options, according to the IEC standard
+.RE
+.PP
+\-\-si
+.RS 4
+select the 1000 base for the following options, according to the SI standard
+.RE
+.PP
+\-k|\-\-kbytes
+.RS 4
+show sizes in KiB, or kB with \-\-si
+.RE
+.PP
+\-m|\-\-mbytes
+.RS 4
+show sizes in MiB, or MB with \-\-si
+.RE
+.PP
+\-g|\-\-gbytes
+.RS 4
+show sizes in GiB, or GB with \-\-si
+.RE
+.PP
+\-t|\-\-tbytes
+.RS 4
+show sizes in TiB, or TB with \-\-si
+.RE
+.RE
+.sp
+If conflicting options are passed, the last one takes precedence\&.
+.SH "TYPICAL USECASES"
+.SS "STARTING WITH A SINGLE\-DEVICE FILESYSTEM"
+.sp
+Assume we\(cqve created a filesystem on a block device \fI/dev/sda\fR with profile \fIsingle/single\fR (data/metadata), the device size is 50GiB and we\(cqve used the whole device for the filesystem\&. The mount point is \fI/mnt\fR\&.
+.sp
+The amount of data stored is 16GiB, metadata have allocated 2GiB\&.
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBADD NEW DEVICE\fR
+.RS 4
+.sp
+We want to increase the total size of the filesystem and keep the profiles\&. The size of the new device \fI/dev/sdb\fR is 100GiB\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ btrfs device add /dev/sdb /mnt
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+The amount of free data space increases by less than 100GiB, some space is allocated for metadata\&.
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBCONVERT TO RAID1\fR
+.RS 4
+.sp
+Now we want to increase the redundancy level of both data and metadata, but we\(cqll do that in steps\&. Note, that the device sizes are not equal and we\(cqll use that to show the capabilities of split data/metadata and independent profiles\&.
+.sp
+The constraint for RAID1 gives us at most 50GiB of usable space and exactly 2 copies will be stored on the devices\&.
+.sp
+First we\(cqll convert the metadata\&. As the metadata occupy less than 50GiB and there\(cqs enough workspace for the conversion process, we can do:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ btrfs balance start \-mconvert=raid1 /mnt
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+This operation can take a while, because all metadata have to be moved and all block pointers updated\&. Depending on the physical locations of the old and new blocks, the disk seeking is the key factor affecting performance\&.
+.sp
+You\(cqll note that the system block group has been also converted to RAID1, this normally happens as the system block group also holds metadata (the physical to logical mappings)\&.
+.sp
+What changed:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+available data space decreased by 3GiB, usable roughly (50 \- 3) + (100 \- 3) = 144 GiB
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+metadata redundancy increased
+.RE
+.sp
+IOW, the unequal device sizes allow for combined space for data yet improved redundancy for metadata\&. If we decide to increase redundancy of data as well, we\(cqre going to lose 50GiB of the second device for obvious reasons\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ btrfs balance start \-dconvert=raid1 /mnt
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+The balance process needs some workspace (ie\&. a free device space without any data or metadata block groups) so the command could fail if there\(cqs too much data or the block groups occupy the whole first device\&.
+.sp
+The device size of \fI/dev/sdb\fR as seen by the filesystem remains unchanged, but the logical space from 50\-100GiB will be unused\&.
+.RE
+.sp
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBREMOVE DEVICE\fR
+.RS 4
+.sp
+Device removal must satisfy the profile constraints, otherwise the command fails\&. For example:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ btrfs device remove /dev/sda /mnt
+ERROR: error removing device \*(Aq/dev/sda\*(Aq: unable to go below two devices on raid1
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+In order to remove a device, you need to convert the profile in this case:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ btrfs balance start \-mconvert=dup \-dconvert=single /mnt
+$ btrfs device remove /dev/sda /mnt
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.SH "DEVICE STATS"
+.sp
+The device stats keep persistent record of several error classes related to doing IO\&. The current values are printed at mount time and updated during filesystem lifetime or from a scrub run\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ btrfs device stats /dev/sda3
+[/dev/sda3]\&.write_io_errs   0
+[/dev/sda3]\&.read_io_errs    0
+[/dev/sda3]\&.flush_io_errs   0
+[/dev/sda3]\&.corruption_errs 0
+[/dev/sda3]\&.generation_errs 0
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+write_io_errs
+.RS 4
+Failed writes to the block devices, means that the layers beneath the filesystem were not able to satisfy the write request\&.
+.RE
+.PP
+read_io_errors
+.RS 4
+Read request analogy to write_io_errs\&.
+.RE
+.PP
+flush_io_errs
+.RS 4
+Number of failed writes with the
+\fIFLUSH\fR
+flag set\&. The flushing is a method of forcing a particular order between write requests and is crucial for implementing crash consistency\&. In case of btrfs, all the metadata blocks must be permanently stored on the block device before the superblock is written\&.
+.RE
+.PP
+corruption_errs
+.RS 4
+A block checksum mismatched or a corrupted metadata header was found\&.
+.RE
+.PP
+generation_errs
+.RS 4
+The block generation does not match the expected value (eg\&. stored in the parent node)\&.
+.RE
+.sp
+Since kernel 5\&.14 the device stats are also available in textual form in \fI/sys/fs/btrfs/FSID/devinfo/DEVID/error_stats\fR\&.
+.SH "EXIT STATUS"
+.sp
+\fBbtrfs device\fR returns a zero exit status if it succeeds\&. Non zero is returned in case of failure\&.
+.sp
+If the \fI\-s\fR option is used, \fBbtrfs device stats\fR will add 64 to the exit status if any of the error counters is non\-zero\&.
+.SH "AVAILABILITY"
+.sp
+\fBbtrfs\fR is part of btrfs\-progs\&. Please refer to the btrfs wiki \m[blue]\fBhttp://btrfs\&.wiki\&.kernel\&.org\fR\m[] for further details\&.
+.SH "SEE ALSO"
+.sp
+\fBmkfs\&.btrfs\fR(8), \fBbtrfs\-replace\fR(8), \fBbtrfs\-balance\fR(8)

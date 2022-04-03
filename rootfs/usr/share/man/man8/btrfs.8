@@ -1,0 +1,228 @@
+'\" t
+.\"     Title: btrfs
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 09/20/2021
+.\"    Manual: Btrfs Manual
+.\"    Source: Btrfs v5.14.1
+.\"  Language: English
+.\"
+.TH "BTRFS" "8" "09/20/2021" "Btrfs v5\&.14\&.1" "Btrfs Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+btrfs \- a toolbox to manage btrfs filesystems
+.SH "SYNOPSIS"
+.sp
+\fBbtrfs\fR \fI<command>\fR [\fI<args>\fR]
+.SH "DESCRIPTION"
+.sp
+The \fBbtrfs\fR utility is a toolbox for managing btrfs filesystems\&. There are command groups to work with subvolumes, devices, for whole filesystem or other specific actions\&. See section \fBCOMMANDS\fR\&.
+.sp
+There are also standalone tools for some tasks like \fBbtrfs\-convert\fR or \fBbtrfstune\fR that were separate historically and/or haven\(cqt been merged to the main utility\&. See section \fISTANDALONE TOOLS\fR for more details\&.
+.sp
+For other topics (mount options, etc) please refer to the separate manual page \fBbtrfs\fR(5)\&.
+.SH "COMMAND SYNTAX"
+.sp
+Any command name can be shortened so long as the shortened form is unambiguous, however, it is recommended to use full command names in scripts\&. All command groups have their manual page named \fBbtrfs\-\fR\fB\fI<group>\fR\fR\&.
+.sp
+For example: it is possible to run \fBbtrfs sub snaps\fR instead of \fBbtrfs subvolume snapshot\fR\&. But \fBbtrfs file s\fR is not allowed, because \fBfile s\fR may be interpreted both as \fBfilesystem show\fR and as \fBfilesystem sync\fR\&.
+.sp
+If the command name is ambiguous, the list of conflicting options is printed\&.
+.sp
+For an overview of a given command use \fIbtrfs command \-\-help\fR or \fIbtrfs [command\&...] \-\-help \-\-full\fR to print all available options\&.
+.SH "COMMANDS"
+.PP
+\fBbalance\fR
+.RS 4
+Balance btrfs filesystem chunks across single or several devices\&.
+
+See
+\fBbtrfs\-balance\fR(8) for details\&.
+.RE
+.PP
+\fBcheck\fR
+.RS 4
+Do off\-line check on a btrfs filesystem\&.
+
+See
+\fBbtrfs\-check\fR(8) for details\&.
+.RE
+.PP
+\fBdevice\fR
+.RS 4
+Manage devices managed by btrfs, including add/delete/scan and so on\&.
+
+See
+\fBbtrfs\-device\fR(8) for details\&.
+.RE
+.PP
+\fBfilesystem\fR
+.RS 4
+Manage a btrfs filesystem, including label setting/sync and so on\&.
+
+See
+\fBbtrfs\-filesystem\fR(8) for details\&.
+.RE
+.PP
+\fBinspect\-internal\fR
+.RS 4
+Debug tools for developers/hackers\&.
+
+See
+\fBbtrfs\-inspect\-internal\fR(8) for details\&.
+.RE
+.PP
+\fBproperty\fR
+.RS 4
+Get/set a property from/to a btrfs object\&.
+
+See
+\fBbtrfs\-property\fR(8) for details\&.
+.RE
+.PP
+\fBqgroup\fR
+.RS 4
+Manage quota group(qgroup) for btrfs filesystem\&.
+
+See
+\fBbtrfs\-qgroup\fR(8) for details\&.
+.RE
+.PP
+\fBquota\fR
+.RS 4
+Manage quota on btrfs filesystem like enabling/rescan and etc\&.
+
+See
+\fBbtrfs\-quota\fR(8) and
+\fBbtrfs\-qgroup\fR(8) for details\&.
+.RE
+.PP
+\fBreceive\fR
+.RS 4
+Receive subvolume data from stdin/file for restore and etc\&.
+
+See
+\fBbtrfs\-receive\fR(8) for details\&.
+.RE
+.PP
+\fBreplace\fR
+.RS 4
+Replace btrfs devices\&.
+
+See
+\fBbtrfs\-replace\fR(8) for details\&.
+.RE
+.PP
+\fBrescue\fR
+.RS 4
+Try to rescue damaged btrfs filesystem\&.
+
+See
+\fBbtrfs\-rescue\fR(8) for details\&.
+.RE
+.PP
+\fBrestore\fR
+.RS 4
+Try to restore files from a damaged btrfs filesystem\&.
+
+See
+\fBbtrfs\-restore\fR(8) for details\&.
+.RE
+.PP
+\fBscrub\fR
+.RS 4
+Scrub a btrfs filesystem\&.
+
+See
+\fBbtrfs\-scrub\fR(8) for details\&.
+.RE
+.PP
+\fBsend\fR
+.RS 4
+Send subvolume data to stdout/file for backup and etc\&.
+
+See
+\fBbtrfs\-send\fR(8) for details\&.
+.RE
+.PP
+\fBsubvolume\fR
+.RS 4
+Create/delete/list/manage btrfs subvolume\&.
+
+See
+\fBbtrfs\-subvolume\fR(8) for details\&.
+.RE
+.SH "STANDALONE TOOLS"
+.sp
+New functionality could be provided using a standalone tool\&. If the functionality proves to be useful, then the standalone tool is declared obsolete and its functionality is copied to the main tool\&. Obsolete tools are removed after a long (years) depreciation period\&.
+.sp
+Tools that are still in active use without an equivalent in \fBbtrfs\fR:
+.PP
+\fBbtrfs\-convert\fR
+.RS 4
+in\-place conversion from ext2/3/4 filesystems to btrfs
+.RE
+.PP
+\fBbtrfstune\fR
+.RS 4
+tweak some filesystem properties on a unmounted filesystem
+.RE
+.PP
+\fBbtrfs\-select\-super\fR
+.RS 4
+rescue tool to overwrite primary superblock from a spare copy
+.RE
+.PP
+\fBbtrfs\-find\-root\fR
+.RS 4
+rescue helper to find tree roots in a filesystem
+.RE
+.sp
+Deprecated and obsolete tools:
+.PP
+\fBbtrfs\-debug\-tree\fR
+.RS 4
+moved to
+\fBbtrfs inspect\-internal dump\-tree\fR\&. Removed from source distribution\&.
+.RE
+.PP
+\fBbtrfs\-show\-super\fR
+.RS 4
+moved to
+\fBbtrfs inspect\-internal dump\-super\fR, standalone removed\&.
+.RE
+.PP
+\fBbtrfs\-zero\-log\fR
+.RS 4
+moved to
+\fBbtrfs rescue zero\-log\fR, standalone removed\&.
+.RE
+.sp
+For space\-constrained environments, it\(cqs possible to build a single binary with functionality of several standalone tools\&. This is following the concept of busybox where the file name selects the functionality\&. This works for symlinks or hardlinks\&. The full list can be obtained by \fBbtrfs help \-\-box\fR\&.
+.SH "EXIT STATUS"
+.sp
+\fBbtrfs\fR returns a zero exit status if it succeeds\&. Non zero is returned in case of failure\&.
+.SH "AVAILABILITY"
+.sp
+\fBbtrfs\fR is part of btrfs\-progs\&. Please refer to the btrfs wiki \m[blue]\fBhttp://btrfs\&.wiki\&.kernel\&.org\fR\m[] for further details\&.
+.SH "SEE ALSO"
+.sp
+\fBbtrfs\fR(5), \fBbtrfs\-balance\fR(8), \fBbtrfs\-check\fR(8), \fBbtrfs\-convert\fR(8), \fBbtrfs\-device\fR(8), \fBbtrfs\-filesystem\fR(8), \fBbtrfs\-inspect\-internal\fR(8), \fBbtrfs\-property\fR(8), \fBbtrfs\-qgroup\fR(8), \fBbtrfs\-quota\fR(8), \fBbtrfs\-receive\fR(8), \fBbtrfs\-replace\fR(8), \fBbtrfs\-rescue\fR(8), \fBbtrfs\-restore\fR(8), \fBbtrfs\-scrub\fR(8), \fBbtrfs\-send\fR(8), \fBbtrfs\-subvolume\fR(8), \fBbtrfstune\fR(8), \fBmkfs\&.btrfs\fR(8)

@@ -1,0 +1,111 @@
+'\" t
+.\"     Title: btrfs-select-super
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 09/20/2021
+.\"    Manual: Btrfs Manual
+.\"    Source: Btrfs v5.14.1
+.\"  Language: English
+.\"
+.TH "BTRFS\-SELECT\-SUPER" "8" "09/20/2021" "Btrfs v5\&.14\&.1" "Btrfs Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+btrfs-select-super \- overwrite primary superblock with a backup copy
+.SH "SYNOPSIS"
+.sp
+\fBbtrfs\-select\-super\fR \-s number \fI<device>\fR
+.SH "DESCRIPTION"
+.sp
+Destructively overwrite all copies of the superblock with a specified copy\&. This helps in certain cases, for example when write barriers were disabled during a power failure and not all superblocks were written, or if the primary superblock is damaged, eg\&. accidentally overwritten\&.
+.sp
+The filesystem specified by \fIdevice\fR must not be mounted\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+\fBPrior to overwriting the primary superblock, please make sure that the backup copies are valid!\fR
+.sp .5v
+.RE
+.sp
+To dump a superblock use the \fBbtrfs inspect\-internal dump\-super\fR command\&.
+.sp
+Then run the check (in the non\-repair mode) using the command \fBbtrfs check \-s\fR where \fI\-s\fR specifies the superblock copy to use\&.
+.sp
+Superblock copies exist in the following offsets on the device:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+primary:
+\fI64KiB\fR
+(65536)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+1st copy:
+\fI64MiB\fR
+(67108864)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+2nd copy:
+\fI256GiB\fR
+(274877906944)
+.RE
+.sp
+A superblock size is \fI4KiB\fR (4096)\&.
+.SH "OPTIONS"
+.PP
+\-s|\-\-super \fI<superblock>\fR
+.RS 4
+use \*(Aqsuperblock\(cqth superblock copy, valid values are 0 1 or 2 if the respective superblock offset is within the device size
+.RE
+.SH "SEE ALSO"
+.sp
+\fBbtrfs\-inspect\-internal\fR(8), \fBbtrfsck check\fR(8)

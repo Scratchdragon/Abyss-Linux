@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>conf_files</key>
+	<array>
+		<dict>
+			<key>file</key>
+			<string>/etc/dns/root.key</string>
+			<key>mtime</key>
+			<integer>1604072688</integer>
+			<key>sha256</key>
+			<string>d632405a07b8bd9a169f9033f5e684d592f3bf470fa7edd4540a20cb627922b5</string>
+			<key>size</key>
+			<integer>1252</integer>
+		</dict>
+	</array>
+	<key>dirs</key>
+	<array>
+		<dict>
+			<key>file</key>
+			<string>/etc</string>
+		</dict>
+		<dict>
+			<key>file</key>
+			<string>/etc/dns</string>
+		</dict>
+	</array>
+</dict>
+</plist>

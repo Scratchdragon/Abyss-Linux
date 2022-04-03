@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>dirs</key>
+	<array>
+		<dict>
+			<key>file</key>
+			<string>/usr</string>
+		</dict>
+		<dict>
+			<key>file</key>
+			<string>/usr/lib</string>
+		</dict>
+		<dict>
+			<key>file</key>
+			<string>/usr/share</string>
+		</dict>
+		<dict>
+			<key>file</key>
+			<string>/usr/share/licenses</string>
+		</dict>
+		<dict>
+			<key>file</key>
+			<string>/usr/share/licenses/libuuid</string>
+		</dict>
+	</array>
+	<key>files</key>
+	<array>
+		<dict>
+			<key>file</key>
+			<string>/usr/lib/libuuid.so.1.3.0</string>
+			<key>mtime</key>
+			<integer>1629980415</integer>
+			<key>sha256</key>
+			<string>7d5f94b31321b5f26d1cfcda2452a50ab02e8f01d6f67f005d66348bb337fd9e</string>
+			<key>size</key>
+			<integer>30848</integer>
+		</dict>
+		<dict>
+			<key>file</key>
+			<string>/usr/share/licenses/libuuid/uuid.license</string>
+			<key>mtime</key>
+			<integer>1629980415</integer>
+			<key>sha256</key>
+			<string>0564bf4d6bdf6c1e450fe35c7377971dedb07e3c1bb191a2c9acdb1bfaa9bd21</string>
+			<key>size</key>
+			<integer>2183</integer>
+		</dict>
+	</array>
+	<key>links</key>
+	<array>
+		<dict>
+			<key>file</key>
+			<string>/usr/lib/libuuid.so.1</string>
+			<key>mtime</key>
+			<integer>1629980415</integer>
+			<key>target</key>
+			<string>/usr/lib/libuuid.so.1.3.0</string>
+		</dict>
+	</array>
+</dict>
+</plist>

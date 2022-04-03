@@ -1,0 +1,83 @@
+'\" t
+.\"     Title: btrfs-image
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 09/20/2021
+.\"    Manual: Btrfs Manual
+.\"    Source: Btrfs v5.14.1
+.\"  Language: English
+.\"
+.TH "BTRFS\-IMAGE" "8" "09/20/2021" "Btrfs v5\&.14\&.1" "Btrfs Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+btrfs-image \- create/restore an image of the filesystem
+.SH "SYNOPSIS"
+.sp
+\fBbtrfs\-image\fR [options] \fI<source>\fR \fI<target>\fR
+.SH "DESCRIPTION"
+.sp
+\fBbtrfs\-image\fR is used to create an image of a btrfs filesystem\&. All data will be zeroed, but metadata and the like is preserved\&. Mainly used for debugging purposes\&.
+.sp
+In the dump mode, source is the btrfs device/file and target is the output file (use \fI\-\fR for stdout)\&.
+.sp
+In the restore mode (option \-r), source is the dumped image and target is the btrfs device/file\&.
+.SH "OPTIONS"
+.PP
+\-r
+.RS 4
+Restore metadump image\&. By default, this fixes super\(cqs chunk tree, by using 1 stripe pointing to primary device, so that file system can be restored by running tree log reply if possible\&. To restore without changing number of stripes in chunk tree check \-o option\&.
+.RE
+.PP
+\-c \fI<value>\fR
+.RS 4
+Compression level (0 ~ 9)\&.
+.RE
+.PP
+\-t \fI<value>\fR
+.RS 4
+Number of threads (1 ~ 32) to be used to process the image dump or restore\&.
+.RE
+.PP
+\-o
+.RS 4
+Use the old restore method, this does not fixup the chunk tree so the restored file system will not be able to be mounted\&.
+.RE
+.PP
+\-s
+.RS 4
+Sanitize the file names when generating the image\&. One \-s means just generate random garbage, which means that the directory indexes won\(cqt match up since the hashes won\(cqt match with the garbage filenames\&. Using \-ss will calculate a collision for the filename so that the hashes match, and if it can\(cqt calculate a collision then it will just generate garbage\&. The collision calculator is very time and CPU intensive so only use it if you are having problems with your file system tree and need to have it mostly working\&.
+.RE
+.PP
+\-w
+.RS 4
+Walk all the trees manually and copy any blocks that are referenced\&. Use this option if your extent tree is corrupted to make sure that all of the metadata is captured\&.
+.RE
+.PP
+\-m
+.RS 4
+Restore for multiple devices, more than 1 device should be provided\&.
+.RE
+.SH "EXIT STATUS"
+.sp
+\fBbtrfs\-image\fR will return 0 if no error happened\&. If any problems happened, 1 will be returned\&.
+.SH "SEE ALSO"
+.sp
+\fBmkfs\&.btrfs\fR(8)

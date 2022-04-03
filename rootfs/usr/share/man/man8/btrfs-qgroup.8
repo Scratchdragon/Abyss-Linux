@@ -1,0 +1,373 @@
+'\" t
+.\"     Title: btrfs-qgroup
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 09/20/2021
+.\"    Manual: Btrfs Manual
+.\"    Source: Btrfs v5.14.1
+.\"  Language: English
+.\"
+.TH "BTRFS\-QGROUP" "8" "09/20/2021" "Btrfs v5\&.14\&.1" "Btrfs Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+btrfs-qgroup \- control the quota group of a btrfs filesystem
+.SH "SYNOPSIS"
+.sp
+\fBbtrfs qgroup\fR \fI<subcommand>\fR \fI<args>\fR
+.SH "DESCRIPTION"
+.sp
+\fBbtrfs qgroup\fR is used to control quota group (qgroup) of a btrfs filesystem\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+To use qgroup you need to enable quota first using \fBbtrfs quota enable\fR command\&.
+.sp .5v
+.RE
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBWarning\fR
+.ps -1
+.br
+.sp
+Qgroup is not stable yet and will impact performance in current mainline kernel (v4\&.14)\&.
+.sp .5v
+.RE
+.SH "QGROUP"
+.sp
+Quota groups or qgroup in btrfs make a tree hierarchy, the leaf qgroups are attached to subvolumes\&. The size limits are set per qgroup and apply when any limit is reached in tree that contains a given subvolume\&.
+.sp
+The limits are separated between shared and exclusive and reflect the extent ownership\&. For example a fresh snapshot shares almost all the blocks with the original subvolume, new writes to either subvolume will raise towards the exclusive limit\&.
+.sp
+The qgroup identifiers conform to \fIlevel/id\fR where level 0 is reserved to the qgroups associated with subvolumes\&. Such qgroups are created automatically\&.
+.sp
+The qgroup hierarchy is built by commands \fBcreate\fR and \fBassign\fR\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+If the qgroup of a subvolume is destroyed, quota about the subvolume will not be functional until qgroup \fI0/\fR\fI\fI<subvolume id>\fR\fR is created again\&.
+.sp .5v
+.RE
+.SH "SUBCOMMAND"
+.PP
+\fBassign\fR [options] \fI<src>\fR \fI<dst>\fR \fI<path>\fR
+.RS 4
+Assign qgroup
+\fI<src>\fR
+as the child qgroup of
+\fI<dst>\fR
+in the btrfs filesystem identified by
+\fI<path>\fR\&.
+.sp
+\fBOptions\fR
+.PP
+\-\-rescan
+.RS 4
+(default since: 4\&.19) Automatically schedule quota rescan if the new qgroup assignment would lead to quota inconsistency\&. See
+\fIQUOTA RESCAN\fR
+for more information\&.
+.RE
+.PP
+\-\-no\-rescan
+.RS 4
+Explicitly ask not to do a rescan, even if the assignment will make the quotas inconsistent\&. This may be useful for repeated calls where the rescan would add unnecessary overhead\&.
+.RE
+.RE
+.PP
+\fBcreate\fR \fI<qgroupid>\fR \fI<path>\fR
+.RS 4
+Create a subvolume quota group\&.
+.sp
+For the
+\fI0/\fR\fI\fI<subvolume id>\fR\fR
+qgroup, a qgroup can be created even before the subvolume is created\&.
+.RE
+.PP
+\fBdestroy\fR \fI<qgroupid>\fR \fI<path>\fR
+.RS 4
+Destroy a qgroup\&.
+.sp
+If a qgroup is not isolated, meaning it is a parent or child qgroup, then it can only be destroyed after the relationship is removed\&.
+.RE
+.PP
+\fBlimit\fR [options] \fI<size>\fR|none [\fI<qgroupid>\fR] \fI<path>\fR
+.RS 4
+Limit the size of a qgroup to
+\fI<size>\fR
+or no limit in the btrfs filesystem identified by
+\fI<path>\fR\&.
+.sp
+If
+\fI<qgroupid>\fR
+is not given, qgroup of the subvolume identified by
+\fI<path>\fR
+is used if possible\&.
+.sp
+\fBOptions\fR
+.PP
+\-c
+.RS 4
+limit amount of data after compression\&. This is the default, it is currently not possible to turn off this option\&.
+.RE
+.PP
+\-e
+.RS 4
+limit space exclusively assigned to this qgroup\&.
+.RE
+.RE
+.PP
+\fBremove\fR \fI<src>\fR \fI<dst>\fR \fI<path>\fR
+.RS 4
+Remove the relationship between child qgroup
+\fI<src>\fR
+and parent qgroup
+\fI<dst>\fR
+in the btrfs filesystem identified by
+\fI<path>\fR\&.
+.sp
+\fBOptions\fR
+.PP
+\-\-rescan
+.RS 4
+(default since: 4\&.19) Automatically schedule quota rescan if the removed qgroup relation would lead to quota inconsistency\&. See
+\fIQUOTA RESCAN\fR
+for more information\&.
+.RE
+.PP
+\-\-no\-rescan
+.RS 4
+Explicitly ask not to do a rescan, even if the removal will make the quotas inconsistent\&. This may be useful for repeated calls where the rescan would add unnecessary overhead\&.
+.RE
+.RE
+.PP
+\fBshow\fR [options] \fI<path>\fR
+.RS 4
+Show all qgroups in the btrfs filesystem identified by
+\fI<path>\fR\&.
+.sp
+\fBOptions\fR
+.PP
+\-p
+.RS 4
+print parent qgroup id\&.
+.RE
+.PP
+\-c
+.RS 4
+print child qgroup id\&.
+.RE
+.PP
+\-r
+.RS 4
+print limit of referenced size of qgroup\&.
+.RE
+.PP
+\-e
+.RS 4
+print limit of exclusive size of qgroup\&.
+.RE
+.PP
+\-F
+.RS 4
+list all qgroups which impact the given path(include ancestral qgroups)
+.RE
+.PP
+\-f
+.RS 4
+list all qgroups which impact the given path(exclude ancestral qgroups)
+.RE
+.PP
+\-\-raw
+.RS 4
+raw numbers in bytes, without the
+\fIB\fR
+suffix\&.
+.RE
+.PP
+\-\-human\-readable
+.RS 4
+print human friendly numbers, base 1024, this is the default
+.RE
+.PP
+\-\-iec
+.RS 4
+select the 1024 base for the following options, according to the IEC standard\&.
+.RE
+.PP
+\-\-si
+.RS 4
+select the 1000 base for the following options, according to the SI standard\&.
+.RE
+.PP
+\-\-kbytes
+.RS 4
+show sizes in KiB, or kB with \-\-si\&.
+.RE
+.PP
+\-\-mbytes
+.RS 4
+show sizes in MiB, or MB with \-\-si\&.
+.RE
+.PP
+\-\-gbytes
+.RS 4
+show sizes in GiB, or GB with \-\-si\&.
+.RE
+.PP
+\-\-tbytes
+.RS 4
+show sizes in TiB, or TB with \-\-si\&.
+.RE
+.PP
+\-\-sort=[+/\-]\fI<attr>\fR[,[+/\-]\fI<attr>\fR]\&...
+.RS 4
+list qgroups in order of
+\fI<attr>\fR\&.
+.sp
+\fI<attr>\fR
+can be one or more of qgroupid,rfer,excl,max_rfer,max_excl\&.
+.sp
+Prefix \*(Aq+\*(Aq means ascending order and \*(Aq\-\*(Aq means descending order of
+\fI<attr>\fR\&. If no prefix is given, use ascending order by default\&.
+.sp
+If multiple
+\fI<attr>\fRs is given, use comma to separate\&.
+.RE
+.PP
+\-\-sync
+.RS 4
+To retrieve information after updating the state of qgroups, force sync of the filesystem identified by
+\fI<path>\fR
+before getting information\&.
+.RE
+.RE
+.SH "QUOTA RESCAN"
+.sp
+The rescan reads all extent sharing metadata and updates the respective qgoups accordingly\&.
+.sp
+The information consists of bytes owned exclusively (\fIexcl\fR) or shared/referred to (\fIrfer\fR)\&. There\(cqs no explicit information about which extents are shared or owned exclusively\&. This means when qgroup relationship changes, extent owners change and qgroup numbers are no longer consistent unless we do a full rescan\&.
+.sp
+However there are cases where we can avoid a full rescan, if a subvolume whose \fIrfer\fR number equals its \fIexcl\fR number, which means all bytes are exclusively owned, then assigning/removing this subvolume only needs to add/subtract \fIrfer\fR number from its parent qgroup\&. This can speed up the rescan\&.
+.SH "EXAMPLES"
+.PP
+\fBExample\ \&1.\ \&Make a parent group that has two quota group children\fR
+.sp
+Given the following filesystem mounted at \fB/mnt/my\-vault\fR
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+Label: none  uuid: 60d2ab3b\-941a\-4f22\-8d1a\-315f329797b2
+       Total devices 1 FS bytes used 128\&.00KiB
+       devid    1 size 5\&.00GiB used 536\&.00MiB path /dev/vdb
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Enable quota and create subvolumes\&. Check subvolume ids\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ cd /mnt/my\-vault
+$ btrfs quota enable \&.
+$ btrfs subvolume create a
+$ btrfs subvolume create b
+$ btrfs subvolume list \&.
+
+ID 261 gen 61 top level 5 path a
+ID 262 gen 62 top level 5 path b
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Create qgroup and set limit to 10MiB\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ btrfs qgroup create 1/100 \&.
+$ btrfs qgroup limit 10M 1/100 \&.
+$ btrfs qgroup assign 0/261 1/100 \&.
+$ btrfs qgroup assign 0/262 1/100 \&.
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+And check qgroups\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ btrfs qgroup show \&.
+
+qgroupid         rfer         excl
+\-\-\-\-\-\-\-\-         \-\-\-\-         \-\-\-\-
+0/5          16\&.00KiB     16\&.00KiB
+0/261        16\&.00KiB     16\&.00KiB
+0/262        16\&.00KiB     16\&.00KiB
+1/100        32\&.00KiB     32\&.00KiB
+.fi
+.if n \{\
+.RE
+.\}
+.SH "EXIT STATUS"
+.sp
+\fBbtrfs qgroup\fR returns a zero exit status if it succeeds\&. Non zero is returned in case of failure\&.
+.SH "AVAILABILITY"
+.sp
+\fBbtrfs\fR is part of btrfs\-progs\&. Please refer to the btrfs wiki \m[blue]\fBhttp://btrfs\&.wiki\&.kernel\&.org\fR\m[] for further details\&.
+.SH "SEE ALSO"
+.sp
+\fBmkfs\&.btrfs\fR(8), \fBbtrfs\-subvolume\fR(8), \fBbtrfs\-quota\fR(8),

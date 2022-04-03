@@ -1,0 +1,175 @@
+'\" t
+.\"     Title: btrfs-replace
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 09/20/2021
+.\"    Manual: Btrfs Manual
+.\"    Source: Btrfs v5.14.1
+.\"  Language: English
+.\"
+.TH "BTRFS\-REPLACE" "8" "09/20/2021" "Btrfs v5\&.14\&.1" "Btrfs Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+btrfs-replace \- replace devices managed by btrfs with other device\&.
+.SH "SYNOPSIS"
+.sp
+\fBbtrfs replace\fR \fI<subcommand>\fR \fI<args>\fR
+.SH "DESCRIPTION"
+.sp
+\fBbtrfs replace\fR is used to replace btrfs managed devices with other device\&.
+.SH "SUBCOMMAND"
+.PP
+\fBcancel\fR \fI<mount_point>\fR
+.RS 4
+Cancel a running device replace operation\&.
+.RE
+.PP
+\fBstart\fR [options] \fI<srcdev>\fR|\fI<devid>\fR \fI<targetdev>\fR \fI<path>\fR
+.RS 4
+Replace device of a btrfs filesystem\&.
+.sp
+On a live filesystem, duplicate the data to the target device which is currently stored on the source device\&. If the source device is not available anymore, or if the \-r option is set, the data is built only using the RAID redundancy mechanisms\&. After completion of the operation, the source device is removed from the filesystem\&. If the
+\fI<srcdev>\fR
+is a numerical value, it is assumed to be the device id of the filesystem which is mounted at
+\fI<path>\fR, otherwise it is the path to the source device\&. If the source device is disconnected, from the system, you have to use the devid parameter format\&. The
+\fI<targetdev>\fR
+needs to be same size or larger than the
+\fI<srcdev>\fR\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+the filesystem has to be resized to fully take advantage of a larger target device; this can be achieved with
+\fBbtrfs filesystem resize <devid>:max /path\fR
+.sp .5v
+.RE
+\fBOptions\fR
+.PP
+\-r
+.RS 4
+only read from
+\fI<srcdev>\fR
+if no other zero\-defect mirror exists\&. (enable this if your drive has lots of read errors, the access would be very slow)
+.RE
+.PP
+\-f
+.RS 4
+force using and overwriting
+\fI<targetdev>\fR
+even if it looks like it contains a valid btrfs filesystem\&.
+.sp
+A valid filesystem is assumed if a btrfs superblock is found which contains a correct checksum\&. Devices that are currently mounted are never allowed to be used as the
+\fI<targetdev>\fR\&.
+.RE
+.PP
+\-B
+.RS 4
+no background replace\&.
+.RE
+.PP
+\-\-enqueue
+.RS 4
+wait if there\(cqs another exclusive operation running, otherwise continue
+.RE
+.RE
+.PP
+\fBstatus\fR [\-1] \fI<mount_point>\fR
+.RS 4
+Print status and progress information of a running device replace operation\&.
+.sp
+\fBOptions\fR
+.PP
+\-1
+.RS 4
+print once instead of print continuously until the replace operation finishes (or is cancelled)
+.RE
+.RE
+.SH "EXAMPLES"
+.PP
+\fBExample\ \&1.\ \&Replacing an online drive with a bigger one\fR
+.sp
+Given the following filesystem mounted at \fB/mnt/my\-vault\fR
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+Label: \*(AqMyVault\*(Aq  uuid: ae20903e\-b72d\-49ba\-b944\-901fc6d888a1
+        Total devices 2 FS bytes used 1TiB
+        devid    1 size 1TiB used 500\&.00GiB path /dev/sda
+        devid    2 size 1TiB used 500\&.00GiB path /dev/sdb
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+In order to replace \fI/dev/sda\fR (\fIdevid 1\fR) with a bigger drive located at \fI/dev/sdc\fR you would run the following:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+btrfs replace start 1 /dev/sdc /mnt/my\-vault/
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+You can monitor progress via:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+btrfs replace status /mnt/my\-vault/
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+After the replacement is complete, as per the docs at \fBbtrfs\-filesystem\fR(8) in order to use the entire storage space of the new drive you need to run:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+btrfs filesystem resize 1:max /mnt/my\-vault/
+.fi
+.if n \{\
+.RE
+.\}
+.SH "EXIT STATUS"
+.sp
+\fBbtrfs replace\fR returns a zero exit status if it succeeds\&. Non zero is returned in case of failure\&.
+.SH "AVAILABILITY"
+.sp
+\fBbtrfs\fR is part of btrfs\-progs\&. Please refer to the btrfs wiki \m[blue]\fBhttp://btrfs\&.wiki\&.kernel\&.org\fR\m[] for further details\&.
+.SH "SEE ALSO"
+.sp
+\fBmkfs\&.btrfs\fR(8), \fBbtrfs\-device\fR(8), \fBbtrfs\-filesystem\fR(8),

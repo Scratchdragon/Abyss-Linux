@@ -1,0 +1,64 @@
+'\" t
+.\"     Title: btrfs-find-root
+.\"    Author: [FIXME: author] [see http://www.docbook.org/tdg5/en/html/author]
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 09/20/2021
+.\"    Manual: Btrfs Manual
+.\"    Source: Btrfs v5.14.1
+.\"  Language: English
+.\"
+.TH "BTRFS\-FIND\-ROOT" "8" "09/20/2021" "Btrfs v5\&.14\&.1" "Btrfs Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+btrfs-find-root \- filter to find btrfs root
+.SH "SYNOPSIS"
+.sp
+\fBbtrfs\-find\-root\fR [options] \fI<device>\fR
+.SH "DESCRIPTION"
+.sp
+\fBbtrfs\-find\-root\fR is used to find the satisfied root, you can filter by root tree\(cqs objectid, generation, level\&.
+.SH "OPTIONS"
+.PP
+\-a
+.RS 4
+Search through all metadata extents, even the root has been already found\&.
+.RE
+.PP
+\-g \fI<generation>\fR
+.RS 4
+Filter root tree by it\(cqs original transaction id, tree root\(cqs generation in default\&.
+.RE
+.PP
+\-o \fI<objectid>\fR
+.RS 4
+Filter root tree by it\(cqs objectid,tree root\(cqs objectid in default\&.
+.RE
+.PP
+\-l \fI<level>\fR
+.RS 4
+Filter root tree by B\-+ tree\(cqs level, level 0 in default\&.
+.RE
+.SH "EXIT STATUS"
+.sp
+\fBbtrfs\-find\-root\fR will return 0 if no error happened\&. If any problems happened, 1 will be returned\&.
+.SH "SEE ALSO"
+.sp
+\fBmkfs\&.btrfs\fR(8)

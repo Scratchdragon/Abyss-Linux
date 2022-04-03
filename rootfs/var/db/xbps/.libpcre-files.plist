@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>dirs</key>
+	<array>
+		<dict>
+			<key>file</key>
+			<string>/usr</string>
+		</dict>
+		<dict>
+			<key>file</key>
+			<string>/usr/lib</string>
+		</dict>
+	</array>
+	<key>files</key>
+	<array>
+		<dict>
+			<key>file</key>
+			<string>/usr/lib/libpcre.so.1.2.13</string>
+			<key>mtime</key>
+			<integer>1629285870</integer>
+			<key>sha256</key>
+			<string>399cd7614b5beca46eb5a92ef823c9d9368d106bda98d0e9b8f467f701de7561</string>
+			<key>size</key>
+			<integer>501784</integer>
+		</dict>
+		<dict>
+			<key>file</key>
+			<string>/usr/lib/libpcreposix.so.0.0.7</string>
+			<key>mtime</key>
+			<integer>1629285870</integer>
+			<key>sha256</key>
+			<string>91174d54b223281c825fabb98f3ff211848f2e0e2e44660d3217b5f287b481cb</string>
+			<key>size</key>
+			<integer>14328</integer>
+		</dict>
+	</array>
+	<key>links</key>
+	<array>
+		<dict>
+			<key>file</key>
+			<string>/usr/lib/libpcre.so.1</string>
+			<key>mtime</key>
+			<integer>1629285870</integer>
+			<key>target</key>
+			<string>/usr/lib/libpcre.so.1.2.13</string>
+		</dict>
+		<dict>
+			<key>file</key>
+			<string>/usr/lib/libpcreposix.so.0</string>
+			<key>mtime</key>
+			<integer>1629285870</integer>
+			<key>target</key>
+			<string>/usr/lib/libpcreposix.so.0.0.7</string>
+		</dict>
+	</array>
+</dict>
+</plist>
