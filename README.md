@@ -5,7 +5,7 @@ Abyss is very early on in development but will continue to be built with a few k
 
 #### 1. Accessibility
 Abyss linux is made as a sort of parallel to Manjaro or Ubuntu. Where Manjaro and Ubuntu each respectively improved on their origin distros (Arch and Debian) to make them easy to use for a wider audience, Abyss will do the same for Void
-#### 2. Honestly
+#### 2. Honesty
 Basically I'm not gonna just add a bunch of crucial stuff and not tell anyone, if I deem a change big it'll be announced
 #### 3. Informality
 I'm just some random ass unqualified dude who's messing around with an underated distro (I'm talking about Void here not Abyss) so I'm gonna treat it as such. Basically I'm not gonna take this whole thing too seriously.
