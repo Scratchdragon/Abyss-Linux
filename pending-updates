@@ -1,0 +1,9 @@
+Need to sync with WSL version,
+
+Official Termux Proot support added
+Proot version add:
+  Git - Out of the box
+  xbps-fix - Fixes repository issues in XBPS
+  XBPS 0.59.1 - Updated xbps
+
+Proot version is 3 commits behind
