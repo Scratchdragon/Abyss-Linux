@@ -28,4 +28,4 @@ In the future here are some key things i'd like to implement from soonest to lat
 - Absorb some of the better aspects from windows, E.G
 - A mobile version for the pine phone or something
 <br>
-It is also to note that if I get bored of this project and it doesnt have many eyes on it then Abyss will be abandoned. If I get bored of this project and it **does** have some supporters than it'll be handed over to someone else.
+It is also to note that if I get bored of this project and it doesnt have many eyes on it then Abyss will be abandoned. If I get bored of this project and it does have some supporters than it'll be handed over to someone else.
