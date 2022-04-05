@@ -1,9 +1,11 @@
 Need to sync with WSL version,
 
-Official Termux Proot support added
-Proot version add:
+Official aarch64 support added
+aarch64 version add:
   Git - Out of the box
   xbps-fix - Fixes repository issues in XBPS
   XBPS 0.59.1 - Updated xbps
+  Nano - Out of the box
+  Set id - /usr/lib/os-release, /etc/issue, /usr/bin/lsb_release
 
-Proot version is 3 commits behind
+aarch64 version is at version 2.3 (bass) while x86 version is 2.2 (sadb-void)
