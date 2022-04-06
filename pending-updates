@@ -9,3 +9,6 @@ aarch64 version add:
   Set id - /usr/lib/os-release, /etc/issue, /usr/bin/lsb_release
 
 aarch64 version is at version 2.3 (bass) while x86 version is 2.2 (sadb-void)
+
+
+amd64 version to be remade in order to be viable for an image file

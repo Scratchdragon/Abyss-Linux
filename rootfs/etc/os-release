@@ -1,9 +1,0 @@
-PRETTY_NAME="Abyss 2.2 (sadb-void)"
-NAME="Abyss GNU/Linux"
-VERSION_ID="2.2"
-VERSION="2.2 (sadb-void)"
-VERSION_CODENAME=sadb-void
-ID=abyss
-HOME_URL="https://www.debian.org/"
-SUPPORT_URL="https://www.debian.org/support"
-BUG_REPORT_URL="https://bugs.debian.org/"
